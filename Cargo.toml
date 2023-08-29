@@ -10,7 +10,8 @@ num-complex = "*"
 gnuplot = "*"
 libm = "*"
 ndarray = "0.15.6"
-ndarray-linalg = { version = "0.16", features = ["openblas-static"] }
+ndarray-linalg = { version = "0.16", features = ["openblas-system"] }
 rustfft = "*"
 indicatif = {version = "*", features = ["rayon"]}
 rayon = "*"
+expm = "*"
