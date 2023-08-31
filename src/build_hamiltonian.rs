@@ -7,11 +7,10 @@ use statrs::function::gamma::gamma_ui;
 
 use crate::parameters::*;
 
-pub fn construct_h_total(mut prm:Parameters) -> (Array2<c64>, Parameters) {
+pub fn construct_h_total(prm:&Parameters) -> Array2<c64> {
     // Define identities: 
     let i_m = iden(prm.n_kappa);
 
-    (prm.omega, prm.xi_g) = get_couplings(&prm);
 
     let k_e = get_kinetic(&prm);
     let v_shifted = get_shifted_v(&prm);
@@ -22,7 +21,7 @@ pub fn construct_h_total(mut prm:Parameters) -> (Array2<c64>, Parameters) {
     h_total = h_total + k_e;
     h_total = h_total + v_shifted;
 
-    (h_total, prm)
+    h_total
 }
 
 fn get_h_ph(prm:&Parameters) -> Array2<c64>{
@@ -100,7 +99,7 @@ fn get_shifted_v(prm:&Parameters) -> Array2<c64>{
     v_shifted
 }
 
-fn get_couplings(prm:&Parameters) -> (f64,f64){
+pub fn get_couplings(prm:&Parameters) -> (f64,f64){
 
     let omega = (prm.wc.powi(2) + 2.0 * prm.g_wc.powi(2)).sqrt();
     let x_omega = (prm.hbar / (prm.m * prm.omega)).sqrt();
@@ -109,7 +108,7 @@ fn get_couplings(prm:&Parameters) -> (f64,f64){
     (omega, xi_g)
 }
 
-fn get_b(nf:usize) -> Array2<c64>{
+pub fn get_b(nf:usize) -> Array2<c64>{
     let mut b: Array2<c64> = Array2::zeros([nf,nf]);
 
     for m in 0..nf - 1 {
@@ -120,7 +119,7 @@ fn get_b(nf:usize) -> Array2<c64>{
     b
 }
 
-fn get_a(nf:usize, prm:&Parameters) -> Array2<c64>{
+pub fn get_a(nf:usize, prm:&Parameters) -> Array2<c64>{
     let wc = prm.wc;
     let omega = prm.omega;
 

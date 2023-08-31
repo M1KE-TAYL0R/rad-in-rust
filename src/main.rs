@@ -1,3 +1,8 @@
+use csv::*;
+use ndarray::*;
+use std::fs::File;
+use ndarray_csv::Array2Writer;
+
 mod build_hamiltonian;
 use build_hamiltonian::*;
 
@@ -8,24 +13,41 @@ mod solve_hamiltonian;
 use solve_hamiltonian::*;
 
 fn main() {
-    ///////////// Define Parameters //////////////
+    let mut prm = get_parameters();
 
-    let prm = get_parameters();
+    let k_points = prm.k_points.clone();
+    let g_wc_grid = prm.g_wc_grid.clone();
+ 
+    for g_wc in &g_wc_grid{
+        let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
+        data.slice_mut(s![..,0]).assign(&k_points);
+        
+        for k in k_points.iter().enumerate(){
+            prm.k = *k.1;
+            prm.g_wc = *g_wc;
+            prm.wc = (prm.wc_norm.powi(2) + (k.1 - prm.k_shift).powi(2)).sqrt();
 
-    let (h, prm) = construct_h_total(prm);
+            (prm.omega, prm.xi_g) = get_couplings(&prm);
 
-    let filename = filename(&prm);
-    print!("{}",filename);
+            let (eig_e,_) = solve_h(&prm);
+            data.slice_mut(s![k.0,1..]).assign(&eig_e);
+        }
 
-    // let hph = get_h_ph(&prm);
-    
-    // let b = get_b(prm.nf);
+        let fname = filename(&prm);
+        _ = write_file(data, &fname);
+    }
 
-    // (prm.omega, prm.xi_g) = get_couplings(&prm);
 
-    // let a = get_a(prm.nf,&prm);
-    // // let a: = get_a(nf, prm);
-    // println!("{}", gamma_ui(1e-10, 1.0e-15));
-    // println!("{}",hph);
 }
 
+
+fn write_file(data: Array2<f64>, fname: &String) -> Result<()> {
+    
+    {
+        let file = File::create(fname)?;
+        let mut writer = WriterBuilder::new().has_headers(false).from_writer(file);
+        writer.serialize_array2(&data)?;
+    }
+
+    Ok(())
+}

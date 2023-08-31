@@ -12,7 +12,7 @@ pub fn get_parameters() -> Parameters{
         xi_g: 0.0,
         nf: 5,
         n_cpus: 48,
-        nk: 240,
+        nk: 120,
         n_kappa: 11,
         n_kappa2: 3,
         k: 0.0,
