@@ -1,3 +1,4 @@
+use std::f64::consts::PI;
 use ndarray::{*,linalg::kron};
 use ndarray_linalg::{c64,*};
 use statrs::function::gamma::gamma_ui;
@@ -5,6 +6,24 @@ use statrs::function::gamma::gamma_ui;
 
 
 use crate::parameters::*;
+
+pub fn construct_h_total(mut prm:Parameters) -> (Array2<c64>, Parameters) {
+    // Define identities: 
+    let i_m = iden(prm.n_kappa);
+
+    (prm.omega, prm.xi_g) = get_couplings(&prm);
+
+    let k_e = get_kinetic(&prm);
+    let v_shifted = get_shifted_v(&prm);
+    let h_ph = get_h_ph(&prm);
+
+    let mut h_total: Array2<c64> = Array2::zeros((prm.nf*prm.n_kappa,prm.nf*prm.n_kappa));
+    h_total = h_total + kron(&i_m, &h_ph);
+    h_total = h_total + k_e;
+    h_total = h_total + v_shifted;
+
+    (h_total, prm)
+}
 
 fn get_h_ph(prm:&Parameters) -> Array2<c64>{
 
@@ -34,7 +53,7 @@ fn get_kinetic(prm:&Parameters) -> Array2<c64>{
     k_e
 }
 
-fn get_shifted_v(prm:&Parameters) {
+fn get_shifted_v(prm:&Parameters) -> Array2<c64>{
     
     // Generate Chi
     let b = get_b(prm.nf);
@@ -42,7 +61,6 @@ fn get_shifted_v(prm:&Parameters) {
 
     // Initialize constants as c64
     let xi_g = c64::from(prm.xi_g);
-    let r_0 = c64::from(prm.r_0);
     let z = c64::from(prm.z);
 
     let n = prm.nf * prm.n_kappa;
@@ -51,7 +69,7 @@ fn get_shifted_v(prm:&Parameters) {
     let kappa_grid2 = to_c_1(prm.kappa_grid2.clone());
 
     // Generate V with phase factor
-    let v_shifted: Array2<c64> = Array2::zeros((n,n));
+    let mut v_shifted: Array2<c64> = Array2::zeros((n,n));
 
     let kappa_max = kappa_grid.norm_max();
 
@@ -59,21 +77,27 @@ fn get_shifted_v(prm:&Parameters) {
     for (l, k2) in kappa_grid2.iter().enumerate() {
 
         let phase= &chi * xi_g * kappa_grid2[l] * c64::i();
-        let (exponent, _) = ndarray_linalg::expm(&phase); // This is still unverified but probably fine
 
+        let mut exponent = iden(prm.nf);
+        if phase.map(|x| x.abs()).opnorm_one().unwrap() > f64::EPSILON * 2. {
+            (exponent, _) = ndarray_linalg::expm(&phase); // This is still unverified but probably fine
+        }
+        
         for (m, k1) in kappa_grid.iter().enumerate(){
             if (k1 + k2).abs() <= kappa_max {
-                if k2.abs() == 0.0 {
+                if k2.abs() <= 1e-7 {
                     v_diff[[m,m]] = c64::from(0.0);
                 }
                 else {
-                    let shift_ind = ((prm.n_kappa2 -1) / 2);
+                    let shift_ind = (prm.n_kappa2 -1) / 2;
+                    v_diff[[m,m + l - shift_ind]] =  -z / 2.0 / PI * gamma_ui(1e-10, (k2.re / 2.0 / prm.r_0).powi(2));
                 }
-
             }
+
+            v_shifted = v_shifted + kron(&v_diff, &exponent);
         }
     }
-
+    v_shifted
 }
 
 fn get_couplings(prm:&Parameters) -> (f64,f64){

@@ -4,15 +4,18 @@ use build_hamiltonian::*;
 pub mod parameters;
 use parameters::*;
 
-// pub mod expm;
-// use expm::*;
-
-use statrs::function::gamma::gamma_ui;
+mod solve_hamiltonian;
+use solve_hamiltonian::*;
 
 fn main() {
     ///////////// Define Parameters //////////////
 
-    let mut prm = get_parameters();
+    let prm = get_parameters();
+
+    let (h, prm) = construct_h_total(prm);
+
+    let filename = filename(&prm);
+    print!("{}",filename);
 
     // let hph = get_h_ph(&prm);
     
