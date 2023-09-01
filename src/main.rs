@@ -2,6 +2,7 @@ use csv::*;
 use ndarray::*;
 use std::fs::File;
 use ndarray_csv::Array2Writer;
+use rayon::*;
 
 mod build_hamiltonian;
 use build_hamiltonian::*;
@@ -38,6 +39,20 @@ fn main() {
             let (eig_e,_) = solve_h(&prm);
             data.slice_mut(s![k.0,1..]).assign(&eig_e);
         }
+
+        // prm.g_wc = *g_wc;
+        // let test = k_points
+        //     .for_each( |&k| {
+                
+        //         let mut prm_k = get_parameters();
+
+        //         prm_k.wc = (prm_k.wc_norm.powi(2) + (k - prm_k.k_shift).powi(2)).sqrt();
+
+        //         (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
+
+        //         let (eig_e,_) = solve_h(&prm);
+            
+        //     });
 
         let fname = filename(&prm);
         _ = write_file(&data, &fname);
