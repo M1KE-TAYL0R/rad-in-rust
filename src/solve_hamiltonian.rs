@@ -5,15 +5,19 @@ use ndarray_linalg::{c64,*};
 
 use crate::{parameters::*, build_hamiltonian::*};
 
-pub fn filename(prm: &Parameters) -> String{
+pub fn filename(prm: &Parameters, ext: &str) -> String{
     // let filename = format!("data/E_RAD_k{0:.3}_{1}_{2}_gwc{3:.7}_wc{4:.4}.dat",prm.k,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm);
-    let filename = format!("data/E_RAD_nk{0}_nf{1}_nkappa{2}_gwc{3:.7}_wc{4:.4}_kshift{5:.2}.csv",prm.nk,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm,prm.k_shift);
+
+    let mut filename = format!("data/E_RAD_nk{0}_nf{1}_nkappa{2}_gwc{3:.7}_wc{4:.4}_kshift{5:.2}.",prm.nk,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm,prm.k_shift);
+
+    filename.push_str(ext);
+
     filename
 }
 
 pub fn solve_h (prm: &Parameters) -> (Array1<f64>, Array1<f64>){
 
-    let filename = filename(&prm);
+    let filename = filename(&prm, "csv");
 
     let mut eig_e: Array1<f64> = Array1::zeros(prm.nf * prm.n_kappa);
     let mut eig_v: Array2<c64> = Array2::zeros((prm.nf * prm.n_kappa,prm.nf * prm.n_kappa));

@@ -24,5 +24,6 @@ pub fn plot_data(data:&Array2<f64>, n_states:usize, prm: &Parameters,fname:&Stri
         .set_y_range(AutoOption::Fix(0.0), AutoOption::Fix(5.0));
     }
 
-    _ = fig.save_to_png("disp.png", 1440, 1080);
+    let message = fig.save_to_png(fname, 1440, 1080);
+    println!("{:?}", message);
 }
