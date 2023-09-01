@@ -22,6 +22,7 @@ pub fn solve_h (prm: &Parameters) -> (Array1<f64>, Array1<f64>){
         // println!("k-point = {0:.3}", prm.k);
 
         let h = construct_h_total(prm);
+        // println!("{}",h);
 
         (eig_e, eig_v) = h.eigh(UPLO::Upper).unwrap();
     }

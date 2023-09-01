@@ -72,7 +72,7 @@ fn get_shifted_v(prm:&Parameters) -> Array2<c64>{
 
     let kappa_max = kappa_grid.norm_max();
 
-    let mut v_diff: Array2<c64> = Array2::zeros((prm.n_kappa,prm.n_kappa)); 
+    
     for (l, k2) in kappa_grid2.iter().enumerate() {
 
         let phase= &chi * xi_g * kappa_grid2[l] * c64::i();
@@ -83,13 +83,16 @@ fn get_shifted_v(prm:&Parameters) -> Array2<c64>{
         }
         
         for (m, k1) in kappa_grid.iter().enumerate(){
+            let mut v_diff: Array2<c64> = Array2::zeros((prm.n_kappa,prm.n_kappa));
             if (k1 + k2).abs() <= kappa_max {
                 if k2.abs() <= 1e-7 {
                     v_diff[[m,m]] = c64::from(0.0);
+                    // println!("Zero!");
                 }
                 else {
                     let shift_ind = (prm.n_kappa2 -1) / 2;
-                    v_diff[[m,m + l - shift_ind]] =  -z / 2.0 / PI * gamma_ui(1e-10, (k2.re / 2.0 / prm.r_0).powi(2));
+                    v_diff[[m,m + l - shift_ind]] =  - z / 2.0 / PI * gamma_ui(1e-10, (k2.re() / 2.0 / prm.r_0).powi(2));
+                    // println!("vdiff = {}",v_diff[[m,m + l - shift_ind]]);
                 }
             }
 
