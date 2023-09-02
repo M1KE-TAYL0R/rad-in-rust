@@ -12,7 +12,7 @@ pub fn get_parameters() -> Parameters{
         xi_g: 0.0,
         nf: 5,
         n_cpus: 48,
-        nk: 3,
+        nk: 240,
         n_kappa: 101,
         n_kappa2: 11,
         k: 0.0,
@@ -31,6 +31,8 @@ pub fn get_parameters() -> Parameters{
     prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
     prm.kappa_grid  = PI / prm.a_0 *  Array1::linspace(prm.n_kappa  as f64 - 1.0, -(prm.n_kappa  as f64 - 1.0), prm.n_kappa );
     prm.kappa_grid2 = PI / prm.a_0 *  Array1::linspace(prm.n_kappa2 as f64 - 1.0, -(prm.n_kappa2 as f64 - 1.0), prm.n_kappa2);
+
+    prm.g_wc_grid = Array1::linspace(-1.0, 2.0, prm.ng).map(|x| libm::exp10(*x as f64));
 
     prm
 }
