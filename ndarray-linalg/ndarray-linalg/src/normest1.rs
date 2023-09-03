@@ -1,7 +1,6 @@
-use std::iter::{zip, Zip};
+use std::iter::zip;
 
 use ndarray::{concatenate, prelude::*};
-use num_complex::ComplexFloat;
 use rand::Rng;
 
 use crate::OperationNorm;
@@ -192,7 +191,7 @@ pub fn normest(input_matrix: &Array2<f64>, t: usize, itmax: u32) -> f64 {
 
         // Section (3) of Alg. 2.4
         let z_matrix: Array2<f64> = input_matrix.t().dot(&s_matrix);
-        let mut h: Vec<f64> = z_matrix
+        let h: Vec<f64> = z_matrix
             .rows()
             .into_iter()
             .map(|row| *row.iter().reduce(|x, y| if x > y { x } else { y }).unwrap())
@@ -205,7 +204,8 @@ pub fn normest(input_matrix: &Array2<f64>, t: usize, itmax: u32) -> f64 {
         }
         let mut zipped_pairs: Vec<(f64, usize)> = zip(h.clone(), 0..n).collect();
         zipped_pairs.sort_unstable_by(|a, b| b.0.partial_cmp(&a.0).unwrap());
-        (h, indices) = zipped_pairs.into_iter().unzip();
+        let mut _temp = h;
+        (_temp, indices) = zipped_pairs.into_iter().unzip();
         if t > 1 {
             // Section (5) of Alg. 2.4
             if check_index_history(&indices, &index_history, t) {
@@ -224,15 +224,15 @@ pub fn normest(input_matrix: &Array2<f64>, t: usize, itmax: u32) -> f64 {
 }
 
 mod tests {
-    use crate::{
-        ndarray::ShapeBuilder,
-        normest1::{ensure_no_parallel_columns, is_column_parallel, prepare_x_matrix},
-        Inverse, OperationNorm,
-    };
-    use ndarray::Array2;
-    use rand::{thread_rng, Rng};
+    // use crate::{
+    //     ndarray::ShapeBuilder,
+    //     normest1::{ensure_no_parallel_columns, is_column_parallel, prepare_x_matrix},
+    //     Inverse, OperationNorm,
+    // };
+    // use ndarray::Array2;
+    // use rand::{thread_rng, Rng};
 
-    use super::{check_if_s_parallel_to_s_old, normest};
+    // use super::{check_if_s_parallel_to_s_old, normest};
 
     #[test]
     fn test_prep() {
@@ -256,8 +256,8 @@ mod tests {
 
     #[test]
     fn test_one_norm() {
-        let Y: Array2<f64> = array![[1., 2., 3., 4.], [1., 2., 3., 0.], [1., 2., 3., 0.]];
-        let est = Y
+        let y: Array2<f64> = array![[1., 2., 3., 4.], [1., 2., 3., 0.], [1., 2., 3., 0.]];
+        let est = y
             .columns()
             .into_iter()
             .map(|col| col.map(|x| f64::abs(*x)).sum())

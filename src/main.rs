@@ -30,7 +30,7 @@ fn main() {
     for g_wc in &g_wc_grid{
         println!("Coupling = {}", g_wc);
 
-        let rayon = false;
+        let rayon = true;
 
         let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
 
@@ -87,7 +87,7 @@ fn main() {
         println!("{:?}", message);
 
         let image_fname = filename(&prm, "png");
-        plot_data(&data, 5, &prm,&image_fname);
+        plot_data(&data, 30, &prm,&image_fname);
     }
 
     println!("Time elapsed = {} sec", now.elapsed().as_secs());

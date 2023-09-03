@@ -1,16 +1,9 @@
-use std::ops::MulAssign;
-
-use crate::{types, Inverse, OperationNorm};
+use crate::{Inverse, OperationNorm};
 use cauchy::Scalar;
-use lax::{Lapack, NormType};
-use ndarray::{linalg::Dot, prelude::*};
-use num_complex::{Complex, Complex32 as c32, Complex64 as c64};
-use num_traits::{real::Real, Pow};
+use lax::Lapack;
+use ndarray:: prelude::*;
 extern crate statrs;
-use statrs::{
-    function::factorial::{binomial, factorial},
-    statistics::Statistics,
-};
+use statrs::function::factorial::{binomial, factorial};
 
 // These constants are hard-coded from Al-Mohy & Higham
 const THETA_3: f64 = 1.495585217958292e-2;
@@ -304,19 +297,19 @@ pub fn expm<S: Scalar<Real = f64> + Lapack>(a_matrix: &Array2<S>) -> (Array2<S>,
 }
 
 mod tests {
-    use crate::{
-        expm::{
-            pade_approximation_13, pade_approximation_3, pade_approximation_5,
-            pade_approximation_7, pade_approximation_9,
-        },
-        Eig, OperationNorm, SVD,
-    };
-    use ndarray::{linalg::Dot, *};
-    use num_complex::{Complex, Complex32 as c32, Complex64 as c64, ComplexFloat};
-    use rand::Rng;
-    use std::{collections::HashMap, fs::File, io::Read, str::FromStr};
+    // use crate::{
+    //     expm::{
+    //         pade_approximation_13, pade_approximation_3, pade_approximation_5,
+    //         pade_approximation_7, pade_approximation_9,
+    //     },
+    //     Eig, OperationNorm, SVD,
+    // };
+    // use ndarray::{linalg::Dot, *};
+    // use num_complex::{Complex, Complex32 as c32, Complex64 as c64, ComplexFloat};
+    // use rand::Rng;
+    // use std::{collections::HashMap, fs::File, io::Read, str::FromStr};
 
-    use super::expm;
+    // use super::expm;
 
     // 50 -> 5x worse error each entry than scipy
     // 100 -> 7.3x worse error each entry than scipy
