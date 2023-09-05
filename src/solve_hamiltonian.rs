@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use ndarray::{*,linalg::kron};
 use ndarray_linalg::{c64,*};
 
@@ -17,19 +15,9 @@ pub fn filename(prm: &Parameters, ext: &str) -> String{
 
 pub fn solve_h (prm: &Parameters) -> (Array1<f64>, Array1<f64>){
 
-    let filename = filename(&prm, "csv");
+    let h = construct_h_total(prm);
 
-    let mut eig_e: Array1<f64> = Array1::zeros(prm.nf * prm.n_kappa);
-    let mut eig_v: Array2<c64> = Array2::zeros((prm.nf * prm.n_kappa,prm.nf * prm.n_kappa));
-
-    if !(prm.load_existing && Path::new(&filename).exists()){
-        // println!("k-point = {0:.3}", prm.k);
-
-        let h = construct_h_total(prm);
-        // println!("{}",h);
-
-        (eig_e, eig_v) = h.eigh(UPLO::Upper).unwrap();
-    }
+    let (eig_e, eig_v) = h.eigh(UPLO::Upper).unwrap();
 
     let n_pa_diag = ave_photon_pa(&prm, eig_v);
 

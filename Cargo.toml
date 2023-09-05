@@ -6,18 +6,18 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-num-complex = "*"
-gnuplot = "*"
-libm = "*"
+num-complex = "0.4.4"
+gnuplot = "0.0.39"
+libm = "0.2.7"
 ndarray = "0.15.6"
 # ndarray-linalg = { version = "0.16", features = ["openblas-system"] }
 ndarray-linalg = {path = "./ndarray-linalg/ndarray-linalg/", version = "*", features = ["openblas-system"]}
-rustfft = "*"
+# rustfft = "*"
 indicatif = {version = "*", features = ["rayon"]}
-rayon = "*"
+rayon = "1.7.0"
 # expm = "*"
-statrs = "*"
-condest = "*"
-cblas = "*"
-ndarray-csv = "*"
+statrs = "0.16.0"
+condest = "0.2.1"
+cblas = "0.4.0"
+ndarray-csv = "0.5.2"
 csv = "1.2.2"

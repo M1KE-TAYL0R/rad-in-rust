@@ -36,10 +36,11 @@ for ijk in range(n_sections):
     sbatch.write(f"#SBATCH --ntasks-per-node={tasks} \n")
     sbatch.write(f"#SBATCH --mem {memory} \n \n")
 
-    sbatch.write( "export OMP_NUM_THREADS=1 \n")
-    sbatch.write( "export MKL_NUM_THREADS=1 \n \n")
+    # sbatch.write( "export OMP_NUM_THREADS=1 \n")
+    # sbatch.write( "export MKL_NUM_THREADS=1 \n \n")
 
-    sbatch.write(f"python3 main.py {log_g_bounds[ijk]} {log_g_bounds[ijk+1]} {ng} {nk} {n_kappa} {nf}")
+    sbatch.write("cargo build --release")
+    sbatch.write(f"./target/release/rad_in_rust {log_g_bounds[ijk]} {log_g_bounds[ijk+1]} {ng} {nk} {n_kappa} {nf}")
 
     sbatch.close()
 

@@ -1,13 +1,13 @@
-use std::{f64::consts::PI, usize};
+use std::{usize,f64::consts::PI};
 use ndarray::*;
 
-pub fn get_parameters() -> Parameters{
+pub fn get_parameters(args: &Vec<String>) -> Parameters{
     let mut prm = Parameters{
         wc_norm: 1.0,
         wc: 1.0,
         ng: 128,
         g_wc: 0.0,
-        g_wc_grid: array![0.0,0.1,0.2],
+        g_wc_grid: Array1::zeros(0),
         omega: 1.0,
         xi_g: 0.0,
         nf: 5,
@@ -25,14 +25,27 @@ pub fn get_parameters() -> Parameters{
         kappa_grid2: Array1::zeros(0),
         m: 1.0,
         hbar: 1.0,
-        load_existing: false
+        load_existing: true
     };
+
+    // prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
+    // prm.kappa_grid  = PI / prm.a_0 *  Array1::linspace(prm.n_kappa  as f64 - 1.0, -(prm.n_kappa  as f64 - 1.0), prm.n_kappa );
+    // prm.kappa_grid2 = PI / prm.a_0 *  Array1::linspace(prm.n_kappa2 as f64 - 1.0, -(prm.n_kappa2 as f64 - 1.0), prm.n_kappa2);
+
+    // prm.g_wc_grid = Array1::linspace(-1.0, 2.0, prm.ng).map(|x| libm::exp10(*x as f64));  
+
+    let log_g_min = args[1].parse::<f64>().unwrap();
+    let log_g_max = args[2].parse::<f64>().unwrap();
+    prm.ng = args[3].parse::<usize>().unwrap();
+    prm.g_wc_grid = Array1::linspace(log_g_min, log_g_max, prm.ng).map(|x| libm::exp10(*x as f64));
+
+    prm.nk = args[4].parse::<usize>().unwrap();
+    prm.n_kappa = args[5].parse::<usize>().unwrap();
+    prm.nf = args[6].parse::<usize>().unwrap();
 
     prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
     prm.kappa_grid  = PI / prm.a_0 *  Array1::linspace(prm.n_kappa  as f64 - 1.0, -(prm.n_kappa  as f64 - 1.0), prm.n_kappa );
     prm.kappa_grid2 = PI / prm.a_0 *  Array1::linspace(prm.n_kappa2 as f64 - 1.0, -(prm.n_kappa2 as f64 - 1.0), prm.n_kappa2);
-
-    prm.g_wc_grid = Array1::linspace(-1.0, 2.0, prm.ng).map(|x| libm::exp10(*x as f64));
 
     prm
 }
