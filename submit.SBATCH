@@ -7,4 +7,5 @@
 #SBATCH --ntasks-per-node=24
 #SBATCH --mem 60GB
 
-cargo run --release -- -1.0 0.0 3 5 31 5
+cargo build --release
+target/release/rad-in-rust -1.0 0.0 3 5 31 5

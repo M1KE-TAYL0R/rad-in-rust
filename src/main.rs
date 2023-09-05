@@ -6,6 +6,7 @@ use rayon::{iter::IntoParallelRefMutIterator, prelude::IndexedParallelIterator};
 use rayon::iter::ParallelIterator;
 use std::time::Instant;
 use std::env;
+use std::{f64::consts::PI, usize};
 
 mod build_hamiltonian;
 use build_hamiltonian::*;
@@ -26,18 +27,22 @@ fn main() {
     // Read command line arguments: log_g_min, log_g_max, ng, nk, n_kappa, nf
     let args: Vec<String> = env::args().collect();
 
-    if args.len() == 6 {
-        let log_g_min = args[0].parse::<f64>().unwrap();
-        let log_g_max = args[1].parse::<f64>().unwrap();
-        prm.ng = args[2].parse::<usize>().unwrap();
+    if args.len() == 7 {
+        let log_g_min = args[1].parse::<f64>().unwrap();
+        let log_g_max = args[2].parse::<f64>().unwrap();
+        prm.ng = args[3].parse::<usize>().unwrap();
         prm.g_wc_grid = Array1::linspace(log_g_min, log_g_max, prm.ng).map(|x| libm::exp10(*x as f64));
 
-        prm.nk = args[3].parse::<usize>().unwrap();
-        prm.n_kappa = args[4].parse::<usize>().unwrap();
-        prm.nf = args[5].parse::<usize>().unwrap();
+        prm.nk = args[4].parse::<usize>().unwrap();
+        prm.n_kappa = args[5].parse::<usize>().unwrap();
+        prm.nf = args[6].parse::<usize>().unwrap();
+
+        prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
+        prm.kappa_grid  = PI / prm.a_0 *  Array1::linspace(prm.n_kappa  as f64 - 1.0, -(prm.n_kappa  as f64 - 1.0), prm.n_kappa );
     }
     else{
-        panic!();
+        println!("{:?}", args);
+        panic!("Not enough/invalid arguments");
     }
 
     let k_points = prm.k_points.clone();
