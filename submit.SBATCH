@@ -7,4 +7,4 @@
 #SBATCH --ntasks-per-node=24
 #SBATCH --mem 60GB
 
-cargo run --release
+cargo run --release -- -1.0 0.0 3 5 31 5

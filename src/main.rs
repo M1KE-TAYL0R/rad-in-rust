@@ -5,6 +5,7 @@ use ndarray_csv::Array2Writer;
 use rayon::{iter::IntoParallelRefMutIterator, prelude::IndexedParallelIterator};
 use rayon::iter::ParallelIterator;
 use std::time::Instant;
+use std::env;
 
 mod build_hamiltonian;
 use build_hamiltonian::*;
@@ -21,6 +22,23 @@ use graph_disp::*;
 fn main() {
     let now = Instant::now();
     let mut prm = get_parameters();
+
+    // Read command line arguments: log_g_min, log_g_max, ng, nk, n_kappa, nf
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() == 6 {
+        let log_g_min = args[0].parse::<f64>().unwrap();
+        let log_g_max = args[1].parse::<f64>().unwrap();
+        prm.ng = args[2].parse::<usize>().unwrap();
+        prm.g_wc_grid = Array1::linspace(log_g_min, log_g_max, prm.ng).map(|x| libm::exp10(*x as f64));
+
+        prm.nk = args[3].parse::<usize>().unwrap();
+        prm.n_kappa = args[4].parse::<usize>().unwrap();
+        prm.nf = args[5].parse::<usize>().unwrap();
+    }
+    else{
+        panic!();
+    }
 
     let k_points = prm.k_points.clone();
     let g_wc_grid = prm.g_wc_grid.clone();
