@@ -43,6 +43,8 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
     prm.n_kappa = args[5].parse::<usize>().unwrap();
     prm.nf = args[6].parse::<usize>().unwrap();
 
+    // prm.k_shift = -prm.a_0/PI; // Added for debugging!
+
     prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
     prm.kappa_grid  = PI / prm.a_0 *  Array1::linspace(prm.n_kappa  as f64 - 1.0, -(prm.n_kappa  as f64 - 1.0), prm.n_kappa );
     prm.kappa_grid2 = PI / prm.a_0 *  Array1::linspace(prm.n_kappa2 as f64 - 1.0, -(prm.n_kappa2 as f64 - 1.0), prm.n_kappa2);

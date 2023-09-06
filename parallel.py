@@ -2,19 +2,19 @@ import os
 import numpy as np
 
 # Simulation parameters
-n_sections = 4
-g_min_log =  1
-g_max_log =  2
+n_sections =1
+g_min_log =  -1.0
+g_max_log =  1.0
 log_g_bounds = np.linspace(g_min_log,g_max_log,n_sections+1)
 ng = 4
 nf = 2
-nk = 512
-n_kappa = 501
+nk = 120
+n_kappa = 31
 
-print(f"Running main.py with {ng*n_sections} couplings and {nk} k-points")
+print(f"Running rad-in-rust with {ng*n_sections} couplings and {nk} k-points")
 
 # sbatch parameters
-node = "-p action -A action"
+node = "-p preempt"
 # node = "-p standard"
 job = "rad_rust"
 time = "2-00:00:00"
@@ -26,7 +26,7 @@ memory = "60GB"
 for ijk in range(n_sections):
     output = f"output{ijk}.slurm"
 
-    sbatch = open("SUBMIT_PAR.SBATCH","w")
+    sbatch = open("par_submit.SBATCH","w")
     sbatch.write("#!/bin/bash \n")
     sbatch.write(f"#SBATCH {node} \n")
     sbatch.write(f"#SBATCH -J {ijk}_{job} \n")
@@ -39,8 +39,8 @@ for ijk in range(n_sections):
     # sbatch.write( "export OMP_NUM_THREADS=1 \n")
     # sbatch.write( "export MKL_NUM_THREADS=1 \n \n")
 
-    sbatch.write("cargo build --release")
-    sbatch.write(f"./target/release/rad_in_rust {log_g_bounds[ijk]} {log_g_bounds[ijk+1]} {ng} {nk} {n_kappa} {nf}")
+    sbatch.write(f"cargo build --release \n \n")
+    sbatch.write(f"/scratch/mtayl29/rad-in-rust/target/release/rad-in-rust {log_g_bounds[ijk]} {log_g_bounds[ijk+1]} {ng} {nk} {n_kappa} {nf}")
 
     sbatch.close()
 

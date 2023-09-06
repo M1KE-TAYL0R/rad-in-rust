@@ -35,11 +35,11 @@ fn main() {
  
     // println!("{}",prm.kappa_grid2);
 
-    for g_wc in &g_wc_grid{
+    for g_wc in g_wc_grid{
         println!("Coupling = {}", g_wc);
-        prm.g_wc = *g_wc;
+        prm.g_wc = g_wc;
 
-        let rayon = true;
+        let rayon: bool = true;
 
         let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
         let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
@@ -51,48 +51,14 @@ fn main() {
             if rayon {
                 ////////////////// Rayon Version //////////////////////////
             
-                data.slice_mut(s![..,0]).assign(&k_points);
+                (data, data_color) = rayon_dispatch(data, data_color, &args, &k_points, g_wc);
 
-                // let mut data_vec: Vec<Array1<f64>> = Vec::new();
-
-                let mut data_vec: Vec<(Array1<f64>,Array1<f64>)> = vec![(Array1::zeros(prm.nf * prm.n_kappa + 1),Array1::zeros(prm.nf * prm.n_kappa + 1)); prm.nk];
-
-                // for ijk in 0 .. prm.nk {
-                //     data_vec.push(data.slice(s![ijk,1..]).to_owned());
-                // }
-
-                data_vec.par_iter_mut().progress().enumerate().for_each( |(k, col)| {
-                    
-                    let mut prm_k = get_parameters(&args);
-
-                    prm_k.k = k_points[k];
-
-                    prm_k.wc = (prm_k.wc_norm.powi(2) + (k_points[k] - prm_k.k_shift).powi(2)).sqrt();
-
-                    (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
-
-                    *col = solve_h(&prm_k);
-                
-                });
-
-                for ijk in 0 .. prm.nk {
-                    data.slice_mut(s![ijk,1..]).assign( &(data_vec[ijk].0) );
-                    data_color.slice_mut(s![ijk,..]).assign( &(data_vec[ijk].1) );
-                }
             }
             else {
                 /////////////// Basic Version /////////////////////////////
-                data.slice_mut(s![..,0]).assign(&k_points);
                 
-                for k in k_points.iter().progress().enumerate(){
-                    prm.k = *k.1;
-                    prm.wc = (prm.wc_norm.powi(2) + (k.1 - prm.k_shift).powi(2)).sqrt();
+                (data, data_color) = basic_dispatch(data, data_color, &args, &k_points, g_wc);
 
-                    (prm.omega, prm.xi_g) = get_couplings(&prm);
-
-                    let (eig_e,_) = solve_h(&prm);
-                    data.slice_mut(s![k.0,1..]).assign(&eig_e);
-                }
             }
 
             write_file(&data, &data_fname);
@@ -118,6 +84,57 @@ fn main() {
     println!("Time elapsed = {} sec", now.elapsed().as_secs());
 }
 
+fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, k_points: &Array1<f64>, g_wc: f64) -> (Array2<f64>, Array2<f64>) {
+    let prm = get_parameters(args);
+
+    data.slice_mut(s![..,0]).assign(&k_points);
+
+    let mut data_vec: Vec<(Array1<f64>,Array1<f64>)> = vec![(Array1::zeros(prm.nf * prm.n_kappa + 1),Array1::zeros(prm.nf * prm.n_kappa + 1)); prm.nk];
+
+    data_vec.par_iter_mut().progress().enumerate().for_each( |(k, col)| {
+        
+        let mut prm_k = get_parameters(&args);
+
+        prm_k.k = k_points[k];
+        prm_k.g_wc = g_wc;
+
+        prm_k.wc = (prm_k.wc_norm.powi(2) + (k_points[k] - prm_k.k_shift).powi(2)).sqrt();
+
+        (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
+
+        *col = solve_h(&prm_k);
+    
+    });
+
+    for ijk in 0 .. prm.nk {
+        data.slice_mut(s![ijk,1..]).assign( &(data_vec[ijk].0) );
+        data_color.slice_mut(s![ijk,..]).assign( &(data_vec[ijk].1) );
+    }
+
+    (data, data_color)
+}
+
+fn basic_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, k_points: &Array1<f64>, g_wc: f64) -> (Array2<f64>, Array2<f64>){
+
+    let mut prm = get_parameters(args);
+
+    prm.g_wc = g_wc;
+
+    data.slice_mut(s![..,0]).assign(k_points);
+                
+    for k in k_points.iter().progress().enumerate(){
+        prm.k = *k.1;
+        prm.wc = (prm.wc_norm.powi(2) + (k.1 - prm.k_shift).powi(2)).sqrt();
+
+        (prm.omega, prm.xi_g) = get_couplings(&prm);
+
+        let (eig_e,n_pa) = solve_h(&prm);
+        data.slice_mut(s![k.0,1..]).assign(&eig_e);
+        data_color.slice_mut(s![k.0,1..]).assign(&n_pa);
+    }
+
+    (data, data_color)
+}
 
 fn write_file(data: &Array2<f64>, fname: &String) {
         

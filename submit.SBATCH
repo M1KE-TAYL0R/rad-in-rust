@@ -8,4 +8,4 @@
 #SBATCH --mem 60GB
 
 cargo build --release
-target/release/rad-in-rust -1.0 0.0 3 5 31 5
+target/release/rad-in-rust -1.0 0.0 3 120 31 7
