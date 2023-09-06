@@ -37,14 +37,14 @@ fn main() {
 
     for g_wc in &g_wc_grid{
         println!("Coupling = {}", g_wc);
+        prm.g_wc = *g_wc;
 
-        let rayon = false;
+        let rayon = true;
 
         let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
+        let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
 
         let data_fname = filename(&prm, "csv");
-
-        prm.g_wc = *g_wc;
 
         if !(prm.load_existing && Path::new(&data_fname).exists()){
 
@@ -53,11 +53,13 @@ fn main() {
             
                 data.slice_mut(s![..,0]).assign(&k_points);
 
-                let mut data_vec: Vec<Array1<f64>> = Vec::new();
+                // let mut data_vec: Vec<Array1<f64>> = Vec::new();
 
-                for ijk in 0 .. prm.nk {
-                    data_vec.push(data.slice(s![ijk,1..]).to_owned());
-                }
+                let mut data_vec: Vec<(Array1<f64>,Array1<f64>)> = vec![(Array1::zeros(prm.nf * prm.n_kappa + 1),Array1::zeros(prm.nf * prm.n_kappa + 1)); prm.nk];
+
+                // for ijk in 0 .. prm.nk {
+                //     data_vec.push(data.slice(s![ijk,1..]).to_owned());
+                // }
 
                 data_vec.par_iter_mut().progress().enumerate().for_each( |(k, col)| {
                     
@@ -69,12 +71,13 @@ fn main() {
 
                     (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
 
-                    (*col,_) = solve_h(&prm_k);
+                    *col = solve_h(&prm_k);
                 
                 });
 
                 for ijk in 0 .. prm.nk {
-                    data.slice_mut(s![ijk,1..]).assign( &data_vec[ijk] );
+                    data.slice_mut(s![ijk,1..]).assign( &(data_vec[ijk].0) );
+                    data_color.slice_mut(s![ijk,..]).assign( &(data_vec[ijk].1) );
                 }
             }
             else {
@@ -92,8 +95,9 @@ fn main() {
                 }
             }
 
-
             write_file(&data, &data_fname);
+            let color_fname: String = filename(&prm, "_color.csv");
+            write_file(&data_color, &color_fname);
         }
 
         else {
@@ -115,7 +119,6 @@ fn main() {
 }
 
 
-
 fn write_file(data: &Array2<f64>, fname: &String) {
         
     let file = File::create(fname).unwrap();
@@ -130,4 +133,14 @@ fn read_file(fname: &String, shape: (usize,usize)) -> Result<Array2<f64>, ReadEr
     let array_read: Result<Array2<f64>, ReadError> = reader.deserialize_array2(shape);
 
     array_read
+}
+
+fn filename(prm: &Parameters, ext: &str) -> String{
+    // let filename = format!("data/E_RAD_k{0:.3}_{1}_{2}_gwc{3:.7}_wc{4:.4}.dat",prm.k,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm);
+
+    let mut filename = format!("data/E_RAD_nk{0}_nf{1}_nkappa{2}_gwc{3:.7}_wc{4:.4}_kshift{5:.2}.",prm.nk,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm,prm.k_shift);
+
+    filename.push_str(ext);
+
+    filename
 }
