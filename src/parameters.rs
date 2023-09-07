@@ -2,6 +2,7 @@ use std::{usize,f64::consts::PI};
 use ndarray::*;
 
 pub fn get_parameters(args: &Vec<String>) -> Parameters{
+    
     let mut prm = Parameters{
         wc_norm: 1.0,
         wc: 1.0,
