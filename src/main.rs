@@ -2,16 +2,16 @@ use csv::*;
 use ndarray::*;
 use std::fs::File;
 use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
-use rayon::{iter::IntoParallelRefMutIterator, prelude::IndexedParallelIterator};
-use rayon::iter::ParallelIterator;
+// use rayon::{iter::IntoParallelRefMutIterator, prelude::IndexedParallelIterator};
+// use rayon::iter::ParallelIterator;
 use std::time::Instant;
 use std::env;
-use indicatif::{ParallelProgressIterator, ProgressIterator};
+// use indicatif::{ParallelProgressIterator, ProgressIterator};
 use std::path::Path;
 use std::result::Result;
 
 mod build_hamiltonian;
-use build_hamiltonian::*;
+// use build_hamiltonian::*;
 
 pub mod parameters;
 use parameters::*;
@@ -92,15 +92,18 @@ fn main() {
 
             }
 
-
+            // Save the `data` and `data_color` arrays as .csv's
             write_file(&data, &data_fname);
             write_file(&data_color, &color_fname);
         }
 
+        // Case where we are loading the data files
         else {
+            // Load `read_data` from it's .csv
             let read_data: Result<Array2<f64>, ReadError> = 
                 read_file(&data_fname,(prm.nk, prm.nf * prm.n_kappa + 1));
 
+            // Save loaded data to `data` or print the reading error
             match read_data {
                 Ok(v) => data = v,
                 Err(e) => println!("Reading error: {e:?}"),
@@ -115,6 +118,7 @@ fn main() {
             // }
         }
 
+        // Initialize image file name and plot data
         let image_fname = filename(&prm, "png");
         plot_data(&data, 30, &prm,&image_fname);
     }
@@ -122,58 +126,7 @@ fn main() {
     println!("Time elapsed = {} sec", now.elapsed().as_secs());
 }
 
-fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, k_points: &Array1<f64>, g_wc: f64) -> (Array2<f64>, Array2<f64>) {
-    let prm = get_parameters(args);
-
-    data.slice_mut(s![..,0]).assign(&k_points);
-
-    let mut data_vec: Vec<(Array1<f64>,Array1<f64>)> = vec![(Array1::zeros(prm.nf * prm.n_kappa + 1),Array1::zeros(prm.nf * prm.n_kappa + 1)); prm.nk];
-
-    data_vec.par_iter_mut().progress().enumerate().for_each( |(k, col)| {
-        
-        let mut prm_k = get_parameters(&args);
-
-        prm_k.k = k_points[k];
-        prm_k.g_wc = g_wc;
-
-        prm_k.wc = (prm_k.wc_norm.powi(2) + (k_points[k] - prm_k.k_shift).powi(2)).sqrt();
-
-        (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
-
-        *col = solve_h(&prm_k);
-    
-    });
-
-    for ijk in 0 .. prm.nk {
-        data.slice_mut(s![ijk,1..]).assign( &(data_vec[ijk].0) );
-        data_color.slice_mut(s![ijk,..]).assign( &(data_vec[ijk].1) );
-    }
-
-    (data, data_color)
-}
-
-fn basic_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, k_points: &Array1<f64>, g_wc: f64) -> (Array2<f64>, Array2<f64>){
-
-    let mut prm = get_parameters(args);
-
-    prm.g_wc = g_wc;
-
-    data.slice_mut(s![..,0]).assign(k_points);
-                
-    for k in k_points.iter().progress().enumerate(){
-        prm.k = *k.1;
-        prm.wc = (prm.wc_norm.powi(2) + (k.1 - prm.k_shift).powi(2)).sqrt();
-
-        (prm.omega, prm.xi_g) = get_couplings(&prm);
-
-        let (eig_e,n_pa) = solve_h(&prm);
-        data.slice_mut(s![k.0,1..]).assign(&eig_e);
-        data_color.slice_mut(s![k.0,1..]).assign(&n_pa);
-    }
-
-    (data, data_color)
-}
-
+/// Writes `data` to a .csv file of the name `fname`
 fn write_file(data: &Array2<f64>, fname: &String) {
         
     let file = File::create(fname).unwrap();
@@ -182,6 +135,7 @@ fn write_file(data: &Array2<f64>, fname: &String) {
 
 }
 
+/// Reads a csv of the name `fname` and casts it to an `Array2` of shape `shape`
 fn read_file(fname: &String, shape: (usize,usize)) -> Result<Array2<f64>, ReadError>{
     let file = File::open(fname).unwrap();
     let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
@@ -190,7 +144,7 @@ fn read_file(fname: &String, shape: (usize,usize)) -> Result<Array2<f64>, ReadEr
     array_read
 }
 
-/// Generates a unique file name based on the parameters in `prm` with file extension from `ext`
+/// Returns a unique file name based on the parameters in `prm` with file extension from `ext`
 fn filename(prm: &Parameters, ext: &str) -> String{
     // let filename = format!("data/E_RAD_k{0:.3}_{1}_{2}_gwc{3:.7}_wc{4:.4}.dat",prm.k,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm);
 

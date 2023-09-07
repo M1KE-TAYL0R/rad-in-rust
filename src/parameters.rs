@@ -1,6 +1,7 @@
 use std::{usize,f64::consts::PI};
 use ndarray::*;
 
+/// From the command line arguments `args` this populates a `Parameters` struct and returns it
 pub fn get_parameters(args: &Vec<String>) -> Parameters{
     
     let mut prm = Parameters{
@@ -53,7 +54,7 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
     prm
 }
 
-
+/// Struct containing all of the necessary infomation to solve a dispersion plot
 pub struct Parameters {
     pub wc_norm: f64,
     pub wc: f64,

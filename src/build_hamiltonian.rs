@@ -7,6 +7,11 @@ use statrs::function::gamma::gamma_ui;
 
 use crate::parameters::*;
 
+/// Wrapper function that calls other function to generate each component of the Hamiltonian:
+/// 
+/// H = H_ph + T_RAD + V_RAD
+/// 
+/// Returns the total Hamiltonian as an `Array2<c64>`
 pub fn construct_h_total(prm:&Parameters) -> Array2<c64> {
     // Define identities: 
     let i_m = iden(prm.n_kappa);
@@ -24,6 +29,7 @@ pub fn construct_h_total(prm:&Parameters) -> Array2<c64> {
     h_total
 }
 
+/// Returns H_ph for a given set of parameters `prm`
 fn get_h_ph(prm:&Parameters) -> Array2<c64>{
 
     let range = to_c_1(Array1::linspace(0.0, (prm.nf - 1) as f64 , prm.nf));
@@ -33,6 +39,7 @@ fn get_h_ph(prm:&Parameters) -> Array2<c64>{
     h_ph
 }
 
+/// Calculates T_RAD for a given set of parameters `prm`
 fn get_kinetic(prm:&Parameters) -> Array2<c64>{
     
     let i_m = iden(prm.n_kappa);
@@ -52,6 +59,7 @@ fn get_kinetic(prm:&Parameters) -> Array2<c64>{
     k_e
 }
 
+/// Calculates T_RAD for a given set of parameters `prm`
 fn get_shifted_v(prm:&Parameters) -> Array2<c64>{
     
     // Generate Chi
@@ -102,6 +110,8 @@ fn get_shifted_v(prm:&Parameters) -> Array2<c64>{
     v_shifted
 }
 
+/// Calculates Bogoliubov transformed frequency, Ω, and effective coupling, ξ, 
+/// from g_wc and wc
 pub fn get_couplings(prm:&Parameters) -> (f64,f64){
 
     let omega = (prm.wc.powi(2) + 2.0 * prm.g_wc.powi(2)).sqrt();
@@ -111,7 +121,8 @@ pub fn get_couplings(prm:&Parameters) -> (f64,f64){
     (omega, xi_g)
 }
 
-pub fn get_b(nf:usize) -> Array2<c64>{
+/// Calculates the Bogoliubov transformed b operator matrix
+fn get_b(nf:usize) -> Array2<c64>{
     let mut b: Array2<c64> = Array2::zeros([nf,nf]);
 
     for m in 0..nf - 1 {
@@ -122,6 +133,7 @@ pub fn get_b(nf:usize) -> Array2<c64>{
     b
 }
 
+/// Calculates the Coulomb gauge a operator matrix in the b Fock state basis
 pub fn get_a(nf:usize, prm:&Parameters) -> Array2<c64>{
     let wc = prm.wc;
     let omega = prm.omega;
@@ -136,11 +148,13 @@ pub fn get_a(nf:usize, prm:&Parameters) -> Array2<c64>{
     -u * &b.t() + v * &b 
 }
 
+/// Converts an `Array1<f64>` to an `Array1<c64>`
 fn to_c_1(arr:Array1<f64>) -> Array1<c64> {
     let new_arr: Array1<c64> = arr.iter().map(|&e| c64::from(e)).collect();
     new_arr
 }
 
+/// Converts an `Array2<f64>` to an `Array2<c64>`
 fn to_c_2(arr:Array2<f64>) -> Array2<c64>{
 
     let new_arr = arr.map(|x| c64::from(x));
@@ -148,6 +162,7 @@ fn to_c_2(arr:Array2<f64>) -> Array2<c64>{
     new_arr    
 }
 
+/// Finds the identity matrix of size `n`
 pub fn iden(n:usize) -> Array2<c64>{
     let one_d: Array1<f64> = Array1::ones(n);
     let one_d_c = to_c_1(one_d);

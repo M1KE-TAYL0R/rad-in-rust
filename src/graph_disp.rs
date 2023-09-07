@@ -4,6 +4,8 @@ use ndarray::*;
 
 use crate::parameters::*;
 
+/// Uses the `gnuplot` crate to plot the dispersion plots.
+/// Currently cannot graph the photon number yet.
 pub fn plot_data(data:&Array2<f64>, n_states:usize, prm: &Parameters,fname:&String) {
     let mut fig = Figure::new();
     fig.set_terminal("pngcairo size 1440,1080", fname);
