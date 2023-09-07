@@ -1,17 +1,9 @@
-use csv::*;
-use ndarray::*;
-use std::fs::File;
+use csv::{ReaderBuilder,WriterBuilder};
+use ndarray::Array2;
+use std::{fs::File, result::Result, path::Path, env, time::Instant};
 use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
-// use rayon::{iter::IntoParallelRefMutIterator, prelude::IndexedParallelIterator};
-// use rayon::iter::ParallelIterator;
-use std::time::Instant;
-use std::env;
-// use indicatif::{ParallelProgressIterator, ProgressIterator};
-use std::path::Path;
-use std::result::Result;
 
 mod build_hamiltonian;
-// use build_hamiltonian::*;
 
 pub mod parameters;
 use parameters::*;

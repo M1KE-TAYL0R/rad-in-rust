@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 use gnuplot::*;
-use ndarray::*;
+use ndarray::{Array2,Array1,s};
 
 use crate::parameters::*;
 

@@ -1,7 +1,6 @@
 use ndarray::{*,linalg::kron};
 use ndarray_linalg::{c64,*};
-use rayon::{iter::IntoParallelRefMutIterator, prelude::IndexedParallelIterator};
-use rayon::iter::ParallelIterator;
+use rayon::{iter::{IntoParallelRefMutIterator,ParallelIterator}, prelude::IndexedParallelIterator};
 use indicatif::{ParallelProgressIterator, ProgressIterator};
 
 use crate::{parameters::*, build_hamiltonian::*};
