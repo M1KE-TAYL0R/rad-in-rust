@@ -22,7 +22,7 @@ pub fn plot_data(data:&Array2<f64>, n_states:usize, prm: &Parameters,fname:&Stri
         let y = col.to_owned() - &zpe_vec;
 
         fig.axes2d().lines(x,y, &[Color("black"),LineWidth(1.5)])
-        .set_x_range(AutoOption::Fix(-x_max), AutoOption::Fix(x_max))
+        .set_x_range(AutoOption::Fix(-x_max + prm.k_shift), AutoOption::Fix(x_max + prm.k_shift))
         .set_y_range(AutoOption::Fix(0.0), AutoOption::Fix(5.0));
     }
 

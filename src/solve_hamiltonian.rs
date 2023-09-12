@@ -5,13 +5,13 @@ use indicatif::{ParallelProgressIterator, ProgressIterator};
 
 use crate::{parameters::*, build_hamiltonian::*};
 
-
 /// Dispatcher that solves the TISE for the system parallelized over many different k-points
 /// for a given coupling strength and command line args
 pub fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, 
-    k_points: &Array1<f64>, g_wc: f64) -> (Array2<f64>, Array2<f64>) {
+    k_points: &Array1<f64>, g_wc: f64, opt_k_shift: Option<f64>) -> (Array2<f64>, Array2<f64>) {
     
     let prm = get_parameters(args);
+    let k_shift = opt_k_shift.unwrap_or(prm.k_shift);
 
     data.slice_mut(s![..,0]).assign(&k_points);
 
@@ -22,6 +22,7 @@ pub fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&
         
         let mut prm_k = get_parameters(&args);
 
+        prm_k.k_shift = k_shift;
         prm_k.k = k_points[k];
         prm_k.g_wc = g_wc;
 
@@ -59,7 +60,7 @@ pub fn basic_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&
 
         let (eig_e,n_pa) = solve_h(&prm);
         data.slice_mut(s![k.0,1..]).assign(&eig_e);
-        data_color.slice_mut(s![k.0,1..]).assign(&n_pa);
+        data_color.slice_mut(s![k.0,..]).assign(&n_pa);
     }
 
     (data, data_color)

@@ -27,7 +27,9 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
         kappa_grid2: Array1::zeros(0),
         m: 1.0,
         hbar: 1.0,
-        load_existing: false
+        load_existing: false,
+        max_energy: 2.0,
+        energy_bins: 128
     };
 
     // prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
@@ -45,7 +47,7 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
     prm.n_kappa = args[5].parse::<usize>().unwrap();
     prm.nf = args[6].parse::<usize>().unwrap();
 
-    // prm.k_shift = -prm.a_0/PI; // Added for debugging!
+    prm.k_shift = -PI/prm.a_0; // Added for debugging!
 
     prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
     prm.kappa_grid  = PI / prm.a_0 *  Array1::linspace(prm.n_kappa  as f64 - 1.0, -(prm.n_kappa  as f64 - 1.0), prm.n_kappa );
@@ -78,6 +80,8 @@ pub struct Parameters {
     pub xi_g: f64,
     pub m: f64,
     pub hbar: f64,
-    pub load_existing: bool
+    pub load_existing: bool,
+    pub max_energy: f64,
+    pub energy_bins: usize
 }
 

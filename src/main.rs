@@ -1,7 +1,8 @@
-use csv::{ReaderBuilder,WriterBuilder};
-use ndarray::Array2;
-use std::{fs::File, result::Result, path::Path, env, time::Instant};
-use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
+// use csv::{ReaderBuilder,WriterBuilder};
+// use ndarray::Array2;
+// use std::{fs::File, result::Result, path::Path, env, time::Instant};
+// use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
+use std::{env, time::Instant};
 
 mod build_hamiltonian;
 
@@ -9,12 +10,13 @@ pub mod parameters;
 use parameters::*;
 
 mod solve_hamiltonian;
-use solve_hamiltonian::*;
+// use solve_hamiltonian::*;
+
+mod routines;
+use routines::*;
 
 mod graph_disp;
-use graph_disp::*;
-
-// Test
+// use graph_disp::*;
 
 /*
 
@@ -35,116 +37,52 @@ nodes.
 */
 
 
-/// Main function which iterates serially through each coupling strength, g_wc, and
-/// has the option to parallelize the iteration over each k-point.
+/**
+# Main function 
+Reads the command line arguments to generate parameters and run the specified routine
+
+Command line input has the form:
+
+`routine: String`,
+`log_g_min: f64`,
+`log_g_max: f64`,
+`ng: usize`,
+`nk: usize`,
+`n_kappa: usize`,
+`nf: usize`
+*/
 fn main() {
+
+    // env::set_var("RUST_BACKTRACE", "1");
     
     // Start the timer to determine
     let now = Instant::now();
 
-    // Read command line arguments: log_g_min, log_g_max, ng, nk, n_kappa, nf
+    // Read command line arguments: routine, log_g_min, log_g_max, ng, nk, n_kappa, nf
     let args: Vec<String> = env::args().collect();
+    println!("{}", &args[1]);
     
-    // Initialize the prm struct based off the command-line arguments
-    let mut prm = get_parameters(&args);
+    // Case when routine == disp
+    if args[1] == "disp" {
+        let args_disp = &args[1..].to_vec();
 
-    // Loop over all coupling strengths in the array prm.g_wc_grid
-    for g_wc in prm.g_wc_grid.clone(){
+        // Initialize the prm struct based off the command-line arguments
+        let prm = get_parameters(args_disp);
 
-        println!("Coupling = {}", g_wc);
+        get_disps(prm, args_disp);
+    }
+    else if args[1] == "absorb" {
+        let args_abs = &args[1..].to_vec();
+        
+        // Initialize the prm struct based off the command-line arguments
+        let prm = get_parameters(args_abs);
 
-        // Set coupling strength in prm
-        prm.g_wc = g_wc;
-
-        // Flag to turn on/off the rayon parallelization implementation
-        let rayon: bool = true;
-
-        // Initialize the arrays to store the energies (data) and photon numbers (data_color)
-        // in the same scope as the saving function write_file()
-        let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
-        let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
-
-        // Initialize the data filenames in the same scope as the saving function write_file()
-        let data_fname = filename(&prm, "csv");
-        let color_fname: String = filename(&prm, "_color.csv");
-
-        // Determines if we need to calculate the eigenenergies or if they were previously 
-        // calculated and can/should be loaded
-        if !(prm.load_existing && Path::new(&data_fname).exists() && Path::new(&color_fname).exists()){
-
-            // Decides to either do the parallel or serial implementation based on the bool, rayon
-            if rayon {
-
-                // Rayon (parallel) implementation of the iterator over k
-                (data, data_color) = rayon_dispatch(data, data_color, &args, &prm.k_points, g_wc);
-
-            }
-            else {
-
-                // Serial implementation of the iterator over k
-                (data, data_color) = basic_dispatch(data, data_color, &args, &prm.k_points, g_wc);
-
-            }
-
-            // Save the `data` and `data_color` arrays as .csv's
-            write_file(&data, &data_fname);
-            write_file(&data_color, &color_fname);
-        }
-
-        // Case where we are loading the data files
-        else {
-            // Load `read_data` from it's .csv
-            let read_data: Result<Array2<f64>, ReadError> = 
-                read_file(&data_fname,(prm.nk, prm.nf * prm.n_kappa + 1));
-
-            // Save loaded data to `data` or print the reading error
-            match read_data {
-                Ok(v) => data = v,
-                Err(e) => println!("Reading error: {e:?}"),
-            }
-
-            // let read_color: Result<Array2<f64>, ReadError> = 
-            //     read_file(&color_fname,(prm.nk, prm.nf * prm.n_kappa ));
-
-            // match read_color {
-            //     Ok(v) => data_color = v,
-            //     Err(e) => println!("Reading error: {e:?}"),
-            // }
-        }
-
-        // Initialize image file name and plot data
-        let image_fname = filename(&prm, "png");
-        plot_data(&data, 30, &prm,&image_fname);
+        get_absorption_plot(prm, &args_abs);
+    }
+    else {
+        panic!("{} is not a valid routine", args[1])
     }
 
     println!("Time elapsed = {} sec", now.elapsed().as_secs());
 }
 
-/// Writes `data` to a .csv file of the name `fname`
-fn write_file(data: &Array2<f64>, fname: &String) {
-        
-    let file = File::create(fname).unwrap();
-    let mut writer = WriterBuilder::new().has_headers(false).from_writer(file);
-    writer.serialize_array2(&data).unwrap();
-
-}
-
-/// Reads a csv of the name `fname` and casts it to an `Array2` of shape `shape`
-fn read_file(fname: &String, shape: (usize,usize)) -> Result<Array2<f64>, ReadError>{
-    let file = File::open(fname).unwrap();
-    let mut reader = ReaderBuilder::new().has_headers(false).from_reader(file);
-    let array_read: Result<Array2<f64>, ReadError> = reader.deserialize_array2(shape);
-
-    array_read
-}
-
-/// Returns a unique file name based on the parameters in `prm` with file extension from `ext`
-fn filename(prm: &Parameters, ext: &str) -> String{
-    // let filename = format!("data/E_RAD_k{0:.3}_{1}_{2}_gwc{3:.7}_wc{4:.4}.dat",prm.k,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm);
-
-    let mut filename = format!("data/E_RAD_nk{0}_nf{1}_nkappa{2}_gwc{3:.7}_wc{4:.4}_kshift{5:.2}.",prm.nk,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm,prm.k_shift);
-
-    filename.push_str(ext);
-
-    filename
-}
