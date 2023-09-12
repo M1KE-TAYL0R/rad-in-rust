@@ -6,8 +6,7 @@ use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
 use crate::{parameters::*, graph_disp::*, solve_hamiltonian::*};
 
 
-pub fn get_absorption_plot(mut prm: Parameters, args: &Vec<String>) {
-    let k_shift_array = &prm.k_points;
+pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
 
     for g_wc in prm.g_wc_grid.clone(){ 
 
@@ -19,14 +18,16 @@ pub fn get_absorption_plot(mut prm: Parameters, args: &Vec<String>) {
         let mut data_total: Array3<f64> = Array3::zeros((prm.nk,prm.nk, prm.nf * prm.n_kappa));
         let mut data_total_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, prm.nf * prm.n_kappa));
 
-        for k_shift in k_shift_array.iter().enumerate(){
+        let k_ph_array = prm.k_points.clone();
 
-            prm.k_shift = *k_shift.1;
+        for k_ph in k_ph_array.iter().enumerate(){
+
+            let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
 
             let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
             let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
 
-            (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(prm.k_shift));
+            (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
 
 
             // let data_fname = filename(&prm, ".csv");
@@ -35,14 +36,17 @@ pub fn get_absorption_plot(mut prm: Parameters, args: &Vec<String>) {
             // let color_fname = filename(&prm, "csv");
             // write_file(&data_color, &color_fname);
             let input = data.slice(s![..,1..]);
-            data_total.slice_mut(s![k_shift.0,..,..]).assign(&input);
-            data_total_c.slice_mut(s![k_shift.0,..,..]).assign(&data_color);
+            data_total.slice_mut(s![k_ph.0,..,..]).assign(&input);
+            data_total_c.slice_mut(s![k_ph.0,..,..]).assign(&data_color);
 
         }
 
+        
 
     }
 }
+
+
 
 
 /// Generates a dispersion plot for each coupling strength in `prm.g_wc_grid`.

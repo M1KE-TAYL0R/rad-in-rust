@@ -8,10 +8,9 @@ use crate::{parameters::*, build_hamiltonian::*};
 /// Dispatcher that solves the TISE for the system parallelized over many different k-points
 /// for a given coupling strength and command line args
 pub fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, 
-    k_points: &Array1<f64>, g_wc: f64, opt_k_shift: Option<f64>) -> (Array2<f64>, Array2<f64>) {
+    k_points: &Array1<f64>, g_wc: f64, absorb_wc: Option<f64>) -> (Array2<f64>, Array2<f64>) {
     
     let prm = get_parameters(args);
-    let k_shift = opt_k_shift.unwrap_or(prm.k_shift);
 
     data.slice_mut(s![..,0]).assign(&k_points);
 
@@ -22,11 +21,13 @@ pub fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&
         
         let mut prm_k = get_parameters(&args);
 
-        prm_k.k_shift = k_shift;
         prm_k.k = k_points[k];
         prm_k.g_wc = g_wc;
 
-        prm_k.wc = (prm_k.wc_norm.powi(2) + (k_points[k] - prm_k.k_shift).powi(2)).sqrt();
+        match absorb_wc {
+            Some(wc) => prm_k.wc = wc,
+            None => prm_k.wc = (prm_k.wc_norm.powi(2) + (k_points[k]).powi(2)).sqrt(),
+        }
 
         (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
 

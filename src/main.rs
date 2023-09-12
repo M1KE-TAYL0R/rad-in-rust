@@ -77,7 +77,7 @@ fn main() {
         // Initialize the prm struct based off the command-line arguments
         let prm = get_parameters(args_abs);
 
-        get_absorption_plot(prm, &args_abs);
+        get_absorption(prm, &args_abs);
     }
     else {
         panic!("{} is not a valid routine", args[1])
