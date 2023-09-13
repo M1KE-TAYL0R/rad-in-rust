@@ -1,5 +1,6 @@
 use csv::{ReaderBuilder,WriterBuilder};
 use ndarray::*;
+use ndarray_linalg::*;
 use std::{fs::File, result::Result, path::Path};
 use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
 
@@ -15,8 +16,13 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
         // Set coupling strength in prm
         prm.g_wc = g_wc;
 
-        let mut data_total: Array3<f64> = Array3::zeros((prm.nk,prm.nk, prm.nf * prm.n_kappa));
-        let mut data_total_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, prm.nf * prm.n_kappa));
+        // let n_e_bins = 128;
+        // let e_max = 2.0;
+
+        // let mut histogram: Array2<f64> = Array2::zeros((prm.nk, n_e_bins));
+
+        let mut data_total: Array3<f64> = Array3::zeros((prm.nk,2,prm.nk * prm.nf * prm.n_kappa));
+        let mut data_total_c: Array3<f64> = Array3::zeros((prm.nk,2,prm.nk * prm.nf * prm.n_kappa));
 
         let k_ph_array = prm.k_points.clone();
 
@@ -36,12 +42,12 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             // let color_fname = filename(&prm, "csv");
             // write_file(&data_color, &color_fname);
             let input = data.slice(s![..,1..]);
-            data_total.slice_mut(s![k_ph.0,..,..]).assign(&input);
-            data_total_c.slice_mut(s![k_ph.0,..,..]).assign(&data_color);
+            data_total.slice_mut(s![k_ph.0,..,..]).assign(&flatten(input));
+            data_total_c.slice_mut(s![k_ph.0,..,..]).assign(&flatten(data_color));
+
+            
 
         }
-
-        
 
     }
 }
