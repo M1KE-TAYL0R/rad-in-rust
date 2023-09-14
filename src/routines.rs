@@ -3,8 +3,9 @@ use ndarray::*;
 use ndarray_linalg::*;
 use std::{fs::File, result::Result, path::Path};
 use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
+use indicatif::ProgressIterator;
 
-use crate::{parameters::*, graph_disp::*, solve_hamiltonian::*};
+use crate::{parameters::*, graphing::*, solve_hamiltonian::*};
 
 
 pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
@@ -17,16 +18,19 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
         prm.g_wc = g_wc;
 
         let n_e_bins = 128;
-        let e_max = 2.0;
+        let e_max = 0.7;
+        let e_min = 0.0;
+        let e_array = Array1::linspace(e_min, e_max, n_e_bins);
+        let d_e = (e_max - e_min) / (n_e_bins as f64 - 1.0);
 
-        let mut histogram: Array2<f64> = Array2::zeros((prm.nk, n_e_bins));
+        let mut histogram: Array2<f64> = Array2::zeros((n_e_bins,prm.nk));
 
         // let mut data_total: Array3<f64> = Array3::zeros((prm.nk,2,prm.nk * prm.nf * prm.n_kappa));
         // let mut data_total_c: Array3<f64> = Array3::zeros((prm.nk,2,prm.nk * prm.nf * prm.n_kappa));
 
         let k_ph_array = prm.k_points.clone();
 
-        for k_ph in k_ph_array.iter().enumerate(){
+        for k_ph in k_ph_array.iter().progress().enumerate(){
 
             let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
 
@@ -41,19 +45,27 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
 
             // let color_fname = filename(&prm, "csv");
             // write_file(&data_color, &color_fname);
-            let f_data = flatten(data.slice(s![..,1..]));
-            let f_data_c = flatten(data_color.slice(s![..,1..]));
+            let f_data = flatten(data.slice(s![..,1..]).to_owned());
+            let f_data_c = flatten(data_color.slice(s![..,..]).to_owned());
 
-            for (ijk, energy) in f_data.iter().enumerate(){
-                
+            for (ijk, energy) in e_array.iter().enumerate(){
+                let subset = f_data.iter().enumerate()
+                    .filter(|&x| (x.1 < energy)&& (x.1 >= &(energy - &d_e)))
+                    .collect::<Vec<(usize,&f64)>>();
+
+                let n_values = (&subset).len() as f64;
+
+                for state in subset{
+                    histogram[[ijk,k_ph.0]] += f_data_c[state.0] / n_values;
+                }
             }
 
-            // data_total.slice_mut(s![k_ph.0,..,..]).assign(&flatten(input));
-            // data_total_c.slice_mut(s![k_ph.0,..,..]).assign(&flatten(data_color));
-
-            
-
         }
+        
+        let h_fname = format!("histogram_{}.csv",g_wc);
+        write_file(&histogram, &h_fname);
+
+        plot_absorb(&histogram, prm.nk, n_e_bins, &format!("./absorb/histogram_{}.png",g_wc));
 
     }
 }
@@ -132,7 +144,7 @@ pub fn get_disps(mut prm: Parameters, args:&Vec<String> ) {
 
         // Initialize image file name and plot data
         let image_fname = filename(&prm, "png");
-        plot_data(&data, 30, &prm,&image_fname);
+        plot_disp(&data, 30, &prm,&image_fname);
     }
 }
 

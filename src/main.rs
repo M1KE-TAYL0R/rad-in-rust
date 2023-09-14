@@ -15,7 +15,7 @@ mod solve_hamiltonian;
 mod routines;
 use routines::*;
 
-mod graph_disp;
+mod graphing;
 // use graph_disp::*;
 
 /*
@@ -44,6 +44,7 @@ Reads the command line arguments to generate parameters and run the specified ro
 Command line input has the form:
 
 `routine: String`,
+`wc_norm: f64
 `log_g_min: f64`,
 `log_g_max: f64`,
 `ng: usize`,
@@ -53,7 +54,7 @@ Command line input has the form:
 */
 fn main() {
 
-    // env::set_var("RUST_BACKTRACE", "1");
+    env::set_var("RUST_BACKTRACE", "1");
     
     // Start the timer to determine
     let now = Instant::now();

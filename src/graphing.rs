@@ -6,7 +6,7 @@ use crate::parameters::*;
 
 /// Uses the `gnuplot` crate to plot the dispersion plots.
 /// Currently cannot graph the photon number yet.
-pub fn plot_data(data:&Array2<f64>, n_states:usize, prm: &Parameters,fname:&String) {
+pub fn plot_disp(data:&Array2<f64>, n_states:usize, prm: &Parameters,fname:&String) {
     let mut fig = Figure::new();
     fig.set_terminal("pngcairo size 1440,1080", fname);
 
@@ -25,6 +25,16 @@ pub fn plot_data(data:&Array2<f64>, n_states:usize, prm: &Parameters,fname:&Stri
         .set_x_range(AutoOption::Fix(-x_max + prm.k_shift), AutoOption::Fix(x_max + prm.k_shift))
         .set_y_range(AutoOption::Fix(0.0), AutoOption::Fix(5.0));
     }
+
+    let message = fig.save_to_png(fname, 1440, 1080);
+    println!("{:?}", message);
+}
+
+pub fn plot_absorb(histogram:&Array2<f64>,nk: usize, n_e_bins: usize, fname:&String) {
+    let mut fig = Figure::new();
+    fig.set_terminal("pngcairo size 1440,1080", fname);
+
+    fig.axes2d().image(histogram, n_e_bins, nk, None, &[]);
 
     let message = fig.save_to_png(fname, 1440, 1080);
     println!("{:?}", message);

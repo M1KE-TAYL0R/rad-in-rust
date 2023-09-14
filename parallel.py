@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 # Simulation parameters
-n_sections =1
+n_sections = 1
 g_min_log =  -1.0
 g_max_log =  1.0
 log_g_bounds = np.linspace(g_min_log,g_max_log,n_sections+1)
@@ -10,6 +10,8 @@ ng = 4
 nf = 2
 nk = 120
 n_kappa = 31
+wc_norm = 0.1
+routine = "disp"
 
 print(f"Running rad-in-rust with {ng*n_sections} couplings and {nk} k-points")
 
@@ -40,7 +42,7 @@ for ijk in range(n_sections):
     # sbatch.write( "export MKL_NUM_THREADS=1 \n \n")
 
     sbatch.write(f"cargo build --release \n \n")
-    sbatch.write(f"/scratch/mtayl29/rad-in-rust/target/release/rad-in-rust {log_g_bounds[ijk]} {log_g_bounds[ijk+1]} {ng} {nk} {n_kappa} {nf}")
+    sbatch.write(f"/scratch/mtayl29/rad-in-rust/target/release/rad-in-rust {routine} {wc_norm} {log_g_bounds[ijk]} {log_g_bounds[ijk+1]} {ng} {nk} {n_kappa} {nf}")
 
     sbatch.close()
 

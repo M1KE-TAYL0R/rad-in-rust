@@ -18,6 +18,7 @@ pub fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&
         Array1::zeros(prm.nf * prm.n_kappa + 1)); prm.nk];
     
     data_vec.par_iter_mut().progress().enumerate().for_each( |(k, col)| {
+    // data_vec.par_iter_mut().enumerate().for_each( |(k, col)| {
         
         let mut prm_k = get_parameters(&args);
 
