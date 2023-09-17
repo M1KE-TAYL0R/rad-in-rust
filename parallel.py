@@ -2,36 +2,35 @@ import os
 import numpy as np
 
 # Simulation parameters
-n_sections = 1
-g_min_log =  -1.0
-g_max_log =  1.0
+n_sections = 10
+g_min_log =  -2.0
+g_max_log =  -0.5
 log_g_bounds = np.linspace(g_min_log,g_max_log,n_sections+1)
-ng = 4
-nf = 2
-nk = 120
-n_kappa = 31
-wc_norm = 0.1
-routine = "disp"
+ng = 1
+nf = 7
+nk = 360
+n_kappa = 101
+wc_norm = 0.08
+routine = "absorb"
 
 print(f"Running rad-in-rust with {ng*n_sections} couplings and {nk} k-points")
 
 # sbatch parameters
-node = "-p preempt"
-# node = "-p standard"
-job = "rad_rust"
-time = "2-00:00:00"
-tasks = "24"
+node = "-p standard"
+# node = "-p action -A action"
+time = "1-00:00:00"
+tasks = "36"
 memory = "60GB"
 
 
 # Submit many instances of main.py to different nodes
 for ijk in range(n_sections):
-    output = f"output{ijk}.slurm"
+    output = f"{routine}_output{ijk}.slurm"
 
     sbatch = open("par_submit.SBATCH","w")
     sbatch.write("#!/bin/bash \n")
     sbatch.write(f"#SBATCH {node} \n")
-    sbatch.write(f"#SBATCH -J {ijk}_{job} \n")
+    sbatch.write(f"#SBATCH -J {ijk}_{routine} \n")
     sbatch.write(f"#SBATCH -o {output} \n")
     sbatch.write(f"#SBATCH -t {time} \n")
     sbatch.write( "#SBATCH -N 1 \n")

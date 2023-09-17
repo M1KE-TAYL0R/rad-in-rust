@@ -4,10 +4,10 @@ from matplotlib.collections import LineCollection
 import subprocess as sp
 import matplotlib.colors as mcolors
 
-nk = 96
+nk = 120
 wc = 1.0
 nf = 7
-n_kappa = 51
+n_kappa = 31
 BASIS = "RAD"
 a_0 = 4
 g_wc_array =  [0.1]
@@ -19,6 +19,7 @@ n_graph_array = [  20 ]
 # y_max_array = [0.4]
 dark = True
 color = True
+k_shift = 0.0
 
 def create_smooth_dark_colormap():
     # Define the color transitions for the colormap
@@ -58,8 +59,8 @@ for ijk in np.flip(range(len(g_wc_array))):
     NPol = nf * n_kappa
 
     EPol = np.zeros(( len(k_points), NPol , 2))
-    EPol[:,:,0] = np.loadtxt("/home/mike/rad-in-rust/data/E_RAD_nk96_nf7_nkappa51_gwc0.0100000_wc1.0000_kshift0.00.csv", delimiter = ',')[:,1:]
-    EPol[:,:,1] = np.loadtxt("/home/mike/rad-in-rust/data/E_RAD_nk96_nf7_nkappa51_gwc0.0100000_wc1.0000_kshift0.00._color.csv", delimiter = ',')
+    EPol[:,:,0] = np.loadtxt(f"./data/E_RAD_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}.csv", delimiter = ',')[:,1:]
+    EPol[:,:,1] = np.loadtxt(f"./data/E_RAD_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}._color.csv", delimiter = ',')
 
     # try:
     #     EPol = np.load( f"{IMG_DIR}plot_data_{g_wc}_{nk}_{a_0}_{n_kappa}_{nf}_{wc}.npy")

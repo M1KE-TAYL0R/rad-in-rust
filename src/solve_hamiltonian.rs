@@ -27,7 +27,7 @@ pub fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&
 
         match absorb_wc {
             Some(wc) => prm_k.wc = wc,
-            None => prm_k.wc = (prm_k.wc_norm.powi(2) + (k_points[k]).powi(2)).sqrt(),
+            None => prm_k.wc = (prm_k.wc_norm.powi(2) + (k_points[k] - prm.k_shift).powi(2)).sqrt(),
         }
 
         (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);

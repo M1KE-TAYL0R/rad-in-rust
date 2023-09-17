@@ -4,6 +4,7 @@ use ndarray_linalg::*;
 use std::{fs::File, result::Result, path::Path};
 use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
 use indicatif::ProgressIterator;
+use ndarray_npy::*;
 
 use crate::{parameters::*, graphing::*, solve_hamiltonian::*};
 
@@ -17,7 +18,7 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
         // Set coupling strength in prm
         prm.g_wc = g_wc;
 
-        let n_e_bins = 128;
+        let n_e_bins = 360;
         let e_max = 0.7;
         let e_min = 0.0;
         let e_array = Array1::linspace(e_min, e_max, n_e_bins);
@@ -25,8 +26,8 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
 
         let mut histogram: Array2<f64> = Array2::zeros((n_e_bins,prm.nk));
 
-        // let mut data_total: Array3<f64> = Array3::zeros((prm.nk,2,prm.nk * prm.nf * prm.n_kappa));
-        // let mut data_total_c: Array3<f64> = Array3::zeros((prm.nk,2,prm.nk * prm.nf * prm.n_kappa));
+        let mut data_total: Array3<f64> = Array3::zeros((prm.nk,prm.nk, prm.nf * prm.n_kappa));
+        let mut data_total_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, prm.nf * prm.n_kappa));
 
         let k_ph_array = prm.k_points.clone();
 
@@ -40,13 +41,16 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
 
 
+            data_total.slice_mut(s![k_ph.0,..,..]).assign(&(data.slice(s![..,1..]).to_owned()));
+            data_total_c.slice_mut(s![k_ph.0,..,..]).assign(&data_color);
+
             // let data_fname = filename(&prm, ".csv");
             // write_file(&data, &data_fname);
 
             // let color_fname = filename(&prm, "csv");
             // write_file(&data_color, &color_fname);
             let f_data = flatten(data.slice(s![..,1..]).to_owned());
-            let f_data_c = flatten(data_color.slice(s![..,..]).to_owned());
+            let f_data_c = flatten(data_color);
 
             for (ijk, energy) in e_array.iter().enumerate(){
                 let subset = f_data.iter().enumerate()
@@ -59,6 +63,12 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
                     histogram[[ijk,k_ph.0]] += f_data_c[state.0] / n_values;
                 }
             }
+
+            let data_fname = filename(&prm, &*format!("_kph{}.csv",k_ph.1));
+            write_npy(data_fname, &data_total).unwrap();
+
+            let data_c_fname = filename(&prm, &*format!("_kph{}_color.csv",k_ph.1));
+            write_npy(data_c_fname, &data_total_c).unwrap();
 
         }
         
@@ -95,7 +105,7 @@ pub fn get_disps(mut prm: Parameters, args:&Vec<String> ) {
         let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
 
         // Initialize the data filenames in the same scope as the saving function write_file()
-        let data_fname = filename(&prm, "csv");
+        let data_fname = filename(&prm, ".csv");
         let color_fname: String = filename(&prm, "_color.csv");
 
         // Determines if we need to calculate the eigenenergies or if they were previously 
@@ -143,7 +153,7 @@ pub fn get_disps(mut prm: Parameters, args:&Vec<String> ) {
         }
 
         // Initialize image file name and plot data
-        let image_fname = filename(&prm, "png");
+        let image_fname = filename(&prm, ".png");
         plot_disp(&data, 30, &prm,&image_fname);
     }
 }
@@ -170,7 +180,7 @@ pub fn read_file(fname: &String, shape: (usize,usize)) -> Result<Array2<f64>, Re
 pub fn filename(prm: &Parameters, ext: &str) -> String{
     // let filename = format!("data/E_RAD_k{0:.3}_{1}_{2}_gwc{3:.7}_wc{4:.4}.dat",prm.k,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm);
 
-    let mut filename = format!("data/E_RAD_nk{0}_nf{1}_nkappa{2}_gwc{3:.7}_wc{4:.4}_kshift{5:.2}.",prm.nk,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm,prm.k_shift);
+    let mut filename = format!("data/E_RAD_nk{0}_nf{1}_nkappa{2}_gwc{3:.7}_wc{4:.4}_kshift{5:.2}",prm.nk,prm.nf,prm.n_kappa,prm.g_wc,prm.wc_norm,prm.k_shift);
 
     filename.push_str(ext);
 
