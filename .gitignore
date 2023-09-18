@@ -8,3 +8,4 @@
 *.lock
 *.jpg
 *.SBATCH
+*.npy

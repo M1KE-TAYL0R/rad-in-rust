@@ -18,20 +18,22 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
         // Set coupling strength in prm
         prm.g_wc = g_wc;
 
-        let n_e_bins = 360;
+        let n_e_bins = prm.nk;
         let e_max = 0.7;
         let e_min = 0.0;
         let e_array = Array1::linspace(e_min, e_max, n_e_bins);
         let d_e = (e_max - e_min) / (n_e_bins as f64 - 1.0);
+        let n_states = 100;
 
         let mut histogram: Array2<f64> = Array2::zeros((n_e_bins,prm.nk));
 
-        let mut data_total: Array3<f64> = Array3::zeros((prm.nk,prm.nk, prm.nf * prm.n_kappa));
-        let mut data_total_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, prm.nf * prm.n_kappa));
+        let mut data_export: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
+        let mut data_export_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
 
         let k_ph_array = prm.k_points.clone();
 
         for k_ph in k_ph_array.iter().progress().enumerate(){
+            println!("Computing {} / {}", k_ph.0, prm.nk);
 
             let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
 
@@ -41,8 +43,8 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
 
 
-            data_total.slice_mut(s![k_ph.0,..,..]).assign(&(data.slice(s![..,1..]).to_owned()));
-            data_total_c.slice_mut(s![k_ph.0,..,..]).assign(&data_color);
+            data_export.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data.slice(s![..,1..n_states]).to_owned()));
+            data_export_c.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data_color.slice(s![..,..n_states-1]).to_owned()));
 
             // let data_fname = filename(&prm, ".csv");
             // write_file(&data, &data_fname);
@@ -63,16 +65,15 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
                     histogram[[ijk,k_ph.0]] += f_data_c[state.0] / n_values;
                 }
             }
-
-            let data_fname = filename(&prm, &*format!("_kph{}.npy",k_ph.1));
-            write_npy(data_fname, &data_total).unwrap();
-
-            let data_c_fname = filename(&prm, &*format!("_kph{}_color.npy",k_ph.1));
-            write_npy(data_c_fname, &data_total_c).unwrap();
-
         }
         
-        let h_fname = format!("histogram_{}.csv",g_wc);
+        let data_fname = filename(&prm, "_absorb.npy");
+        write_npy(data_fname, &data_export).unwrap();
+
+        let data_c_fname = filename(&prm, "_absorb_color.npy");
+        write_npy(data_c_fname, &data_export_c).unwrap();
+        
+        let h_fname = format!("histogram_{}_{}_{}.csv",g_wc, prm.nk, prm.n_kappa);
         write_file(&histogram, &h_fname);
 
         plot_absorb(&histogram, prm.nk, n_e_bins, &format!("./absorb/histogram_{}.png",g_wc));

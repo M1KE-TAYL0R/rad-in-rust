@@ -38,7 +38,7 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
 
     // prm.g_wc_grid = Array1::linspace(-1.0, 2.0, prm.ng).map(|x| libm::exp10(*x as f64));  
 
-    println!("{}", args[1]);
+    // println!("{}", args[1]);
 
     prm.wc_norm = args[1].parse::<f64>().unwrap();
 
