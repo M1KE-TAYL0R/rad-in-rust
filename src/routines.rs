@@ -64,10 +64,10 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
                 }
             }
 
-            let data_fname = filename(&prm, &*format!("_kph{}.csv",k_ph.1));
+            let data_fname = filename(&prm, &*format!("_kph{}.npy",k_ph.1));
             write_npy(data_fname, &data_total).unwrap();
 
-            let data_c_fname = filename(&prm, &*format!("_kph{}_color.csv",k_ph.1));
+            let data_c_fname = filename(&prm, &*format!("_kph{}_color.npy",k_ph.1));
             write_npy(data_c_fname, &data_total_c).unwrap();
 
         }

@@ -2,7 +2,7 @@
 #SBATCH -p standard 
 #SBATCH -J 9_absorb 
 #SBATCH -o absorb_output9.slurm 
-#SBATCH -t 2-00:00:00 
+#SBATCH -t 1-00:00:00 
 #SBATCH -N 1 
 #SBATCH --ntasks-per-node=36 
 #SBATCH --mem 60GB 
