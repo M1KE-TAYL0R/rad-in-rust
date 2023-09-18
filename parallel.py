@@ -7,20 +7,20 @@ g_min_log =  -2.0
 g_max_log =  -0.0
 log_g_bounds = np.linspace(g_min_log,g_max_log,n_sections+1)
 ng = 1
-nf = 5
-nk = 360 * 2
-n_kappa = 51
-wc_norm = 0.08
+nf = 10
+nk = 360
+n_kappa = 31
+wc_norm = 0.1
 routine = "absorb"
 
 print(f"Running rad-in-rust with {ng*n_sections} couplings and {nk} k-points")
 
 # sbatch parameters
-# node = "-p preempt"
-node = "-p action -A action"
+node = "-p standard"
+# node = "-p action -A action"
 time = "1-00:00:00"
 tasks = "24"
-memory = "60GB"
+memory = "24GB"
 
 
 # Submit many instances of main.py to different nodes

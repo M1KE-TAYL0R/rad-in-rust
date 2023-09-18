@@ -28,8 +28,8 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
         m: 1.0,
         hbar: 1.0,
         load_existing: false,
-        max_energy: 2.0,
-        energy_bins: 128
+        max_energy: 0.4,
+        k_ph_factor: 4
     };
 
     // prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
@@ -86,6 +86,6 @@ pub struct Parameters {
     pub hbar: f64,
     pub load_existing: bool,
     pub max_energy: f64,
-    pub energy_bins: usize
+    pub k_ph_factor: usize
 }
 

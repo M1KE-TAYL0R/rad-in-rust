@@ -5,6 +5,7 @@ use std::{fs::File, result::Result, path::Path};
 use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
 use indicatif::ProgressIterator;
 use ndarray_npy::*;
+use std::{usize,f64::consts::PI};
 
 use crate::{parameters::*, graphing::*, solve_hamiltonian::*};
 
@@ -17,66 +18,92 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
 
         // Set coupling strength in prm
         prm.g_wc = g_wc;
+        
+        let data_fname = filename(&prm, "_absorb.npy");
+        let data_c_fname = filename(&prm, "_absorb_color.npy");
 
         let n_e_bins = prm.nk;
-        let e_max = 0.7;
+        let e_max = prm.max_energy;
         let e_min = 0.0;
         let e_array = Array1::linspace(e_min, e_max, n_e_bins);
         let d_e = (e_max - e_min) / (n_e_bins as f64 - 1.0);
         let n_states = 100;
+        
+        let k_ph_array = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk *prm.k_ph_factor);
 
         let mut histogram: Array2<f64> = Array2::zeros((n_e_bins,prm.nk));
-
         let mut data_export: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
         let mut data_export_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
 
-        let k_ph_array = prm.k_points.clone();
+        if !(prm.load_existing && Path::new(&data_fname).exists() && Path::new(&data_c_fname).exists()){
 
-        for k_ph in k_ph_array.iter().progress().enumerate(){
-            println!("Computing {} / {}", k_ph.0, prm.nk);
+            for k_ph in k_ph_array.iter().progress().enumerate(){
+                println!("Computing {} / {}", k_ph.0, prm.nk);
 
-            let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
+                let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
 
-            let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
-            let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
+                let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
+                let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
 
-            (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
+                (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
 
 
-            data_export.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data.slice(s![..,1..n_states]).to_owned()));
-            data_export_c.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data_color.slice(s![..,..n_states-1]).to_owned()));
+                data_export.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data.slice(s![..,1..n_states]).to_owned()));
+                data_export_c.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data_color.slice(s![..,..n_states-1]).to_owned()));
 
-            // let data_fname = filename(&prm, ".csv");
-            // write_file(&data, &data_fname);
+                // let data_fname = filename(&prm, ".csv");
+                // write_file(&data, &data_fname);
 
-            // let color_fname = filename(&prm, "csv");
-            // write_file(&data_color, &color_fname);
-            let f_data = flatten(data.slice(s![..,1..]).to_owned());
-            let f_data_c = flatten(data_color);
+                // let color_fname = filename(&prm, "csv");
+                // write_file(&data_color, &color_fname);
+                let f_data = flatten(data.slice(s![..,1..]).to_owned());
+                let f_data_c = flatten(data_color);
 
-            for (ijk, energy) in e_array.iter().enumerate(){
-                let subset = f_data.iter().enumerate()
-                    .filter(|&x| (x.1 < energy)&& (x.1 >= &(energy - &d_e)))
-                    .collect::<Vec<(usize,&f64)>>();
+                for (ijk, energy) in e_array.iter().enumerate(){
+                    let subset = f_data.iter().enumerate()
+                        .filter(|&x| (x.1 < energy)&& (x.1 >= &(energy - &d_e)))
+                        .collect::<Vec<(usize,&f64)>>();
 
-                let n_values = (&subset).len() as f64;
+                    let n_values = (&subset).len() as f64;
 
-                for state in subset{
-                    histogram[[ijk,k_ph.0]] += f_data_c[state.0] / n_values;
+                    for state in subset{
+                        histogram[[ijk,k_ph.0]] += f_data_c[state.0] / n_values;
+                    }
+                }
+            }
+            
+            write_npy(data_fname, &data_export).unwrap();
+
+            write_npy(data_c_fname, &data_export_c).unwrap();
+        }
+        else {
+            data_export = read_npy(data_fname).unwrap();
+            data_export_c = read_npy(data_c_fname).unwrap();
+
+
+            for k_ph in k_ph_array.iter().progress().enumerate(){
+                let f_data = flatten(data_export.slice(s![k_ph.0,..,..]).to_owned());
+                let f_data_c = flatten(data_export_c.slice(s![k_ph.0,..,..]).to_owned());
+
+                for (ijk, energy) in e_array.iter().enumerate(){
+                    let subset = f_data.iter().enumerate()
+                        .filter(|&x| (x.1 < energy)&& (x.1 >= &(energy - &d_e)))
+                        .collect::<Vec<(usize,&f64)>>();
+
+                    let n_values = (&subset).len() as f64;
+
+                    for state in subset{
+                        histogram[[ijk,k_ph.0]] += f_data_c[state.0] / n_values;
+                    }
                 }
             }
         }
         
-        let data_fname = filename(&prm, "_absorb.npy");
-        write_npy(data_fname, &data_export).unwrap();
+        let h_fname = format!("histogram_{}_{}_{}",g_wc, prm.nk, prm.n_kappa);
 
-        let data_c_fname = filename(&prm, "_absorb_color.npy");
-        write_npy(data_c_fname, &data_export_c).unwrap();
-        
-        let h_fname = format!("histogram_{}_{}_{}.csv",g_wc, prm.nk, prm.n_kappa);
-        write_file(&histogram, &h_fname);
+        write_file(&histogram, &(h_fname.clone() + ".csv"));
 
-        plot_absorb(&histogram, prm.nk, n_e_bins, &format!("./absorb/histogram_{}.png",g_wc));
+        plot_absorb(&histogram, &prm, n_e_bins, &(h_fname.clone() + ".png"));
 
     }
 }

@@ -1,5 +1,5 @@
 #!/bin/bash 
-#SBATCH -p action -A action 
+#SBATCH -p standard 
 #SBATCH -J 7_absorb 
 #SBATCH -o absorb_output7.slurm 
 #SBATCH -t 1-00:00:00 
@@ -9,4 +9,4 @@
  
 cargo build --release 
  
-/scratch/mtayl29/rad-in-rust/target/release/rad-in-rust absorb 0.08 -0.25 -0.0 1 720 51 5
+/scratch/mtayl29/rad-in-rust/target/release/rad-in-rust absorb 0.1 -0.25 -0.0 1 360 31 10
