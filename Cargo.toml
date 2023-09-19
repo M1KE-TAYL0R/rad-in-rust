@@ -10,8 +10,8 @@ num-complex = "0.4.4"
 gnuplot = "0.0.39"
 libm = "0.2.7"
 ndarray = "0.15.6"
-ndarray-linalg = {path = "./ndarray-linalg/ndarray-linalg/", version = "*", features = ["intel-mkl-static"]}
-# ndarray-linalg = {path = "./ndarray-linalg/ndarray-linalg/", version = "*", features = ["openblas-system"]}
+# ndarray-linalg = {path = "./ndarray-linalg/ndarray-linalg/", version = "*", features = ["intel-mkl-static"]}
+ndarray-linalg = {path = "./ndarray-linalg/ndarray-linalg/", version = "*", features = ["openblas-system"]}
 # rustfft = "*"
 indicatif = {version = "*", features = ["rayon"]}
 rayon = "1.7.0"

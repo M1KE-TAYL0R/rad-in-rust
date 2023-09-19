@@ -22,23 +22,23 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
         let data_fname = filename(&prm, "_absorb.npy");
         let data_c_fname = filename(&prm, "_absorb_color.npy");
 
-        let n_e_bins = prm.nk;
+        let n_bins = prm.nk/ prm.k_ph_factor;
         let e_max = prm.max_energy;
         let e_min = 0.0;
-        let e_array = Array1::linspace(e_min, e_max, n_e_bins);
-        let d_e = (e_max - e_min) / (n_e_bins as f64 - 1.0);
-        let n_states = 100;
+        let e_array = Array1::linspace(e_min, e_max, n_bins);
+        let d_e = (e_max - e_min) / (n_bins as f64 - 1.0);
+        let n_states = prm.n_kappa * prm.nf;
         
-        let k_ph_array = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk *prm.k_ph_factor);
+        let k_ph_array = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, n_bins);
 
-        let mut histogram: Array2<f64> = Array2::zeros((n_e_bins,prm.nk));
+        let mut histogram: Array2<f64> = Array2::zeros((n_bins,n_bins));
         let mut data_export: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
         let mut data_export_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
 
         if !(prm.load_existing && Path::new(&data_fname).exists() && Path::new(&data_c_fname).exists()){
 
             for k_ph in k_ph_array.iter().progress().enumerate(){
-                println!("Computing {} / {}", k_ph.0, prm.nk);
+                println!("Computing {} / {}", k_ph.0, n_bins);
 
                 let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
 
@@ -51,11 +51,6 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
                 data_export.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data.slice(s![..,1..n_states]).to_owned()));
                 data_export_c.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data_color.slice(s![..,..n_states-1]).to_owned()));
 
-                // let data_fname = filename(&prm, ".csv");
-                // write_file(&data, &data_fname);
-
-                // let color_fname = filename(&prm, "csv");
-                // write_file(&data_color, &color_fname);
                 let f_data = flatten(data.slice(s![..,1..]).to_owned());
                 let f_data_c = flatten(data_color);
 
@@ -73,7 +68,6 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             }
             
             write_npy(data_fname, &data_export).unwrap();
-
             write_npy(data_c_fname, &data_export_c).unwrap();
         }
         else {
@@ -103,7 +97,7 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
 
         write_file(&histogram, &(h_fname.clone() + ".csv"));
 
-        plot_absorb(&histogram, &prm, n_e_bins, &(h_fname.clone() + ".png"));
+        plot_absorb(&histogram, &prm, n_bins, &(h_fname.clone() + ".png"));
 
     }
 }

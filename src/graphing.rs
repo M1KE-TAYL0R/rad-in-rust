@@ -31,18 +31,20 @@ pub fn plot_disp(data:&Array2<f64>, n_states:usize, prm: &Parameters,fname:&Stri
     println!("{:?}", message);
 }
 
-pub fn plot_absorb(histogram:&Array2<f64>,prm: &Parameters, n_e_bins: usize, fname:&String) {
+pub fn plot_absorb(histogram:&Array2<f64>,prm: &Parameters, n_bins: usize, fname:&String) {
     let mut fig = Figure::new();
     fig.set_terminal("pngcairo size 1440,1080", fname);
+    // fig.set_terminal("svg enhanced size 1440,1080", fname);
 
     let k_min = prm.k_points.clone().min();
     let k_max = prm.k_points.clone().max();
 
-    fig.axes2d().image(histogram, n_e_bins, prm.nk, Some((k_min,0.0,k_max,prm.max_energy * 27.4112)), &[])
-    .set_x_range(AutoOption::Fix(0.0), AutoOption::Fix(n_e_bins as f64))
-    .set_y_range(AutoOption::Fix(0.0), AutoOption::Fix(n_e_bins as f64))
+    fig.axes2d().image(histogram, n_bins, n_bins, Some((k_min,0.0,k_max,prm.max_energy * 27.4112)), &[])
+    .set_x_range(AutoOption::Fix(k_min), AutoOption::Fix(k_max))
+    .set_y_range(AutoOption::Fix(0.0), AutoOption::Fix(prm.max_energy * 27.4112))
     .set_x_ticks(Some((Auto,5)), &[], &[]);
 
     let message = fig.save_to_png(fname, 1440, 1080);
+    // let message_svg = fig.save_to_svg(fname, 1440, 1080);
     println!("{:?}", message);
 }
