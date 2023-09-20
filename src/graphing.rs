@@ -1,7 +1,6 @@
 use std::f64::consts::PI;
 use gnuplot::*;
 use ndarray::{Array2,Array1,s};
-use statrs::statistics::Statistics;
 
 use crate::parameters::*;
 
@@ -33,16 +32,29 @@ pub fn plot_disp(data:&Array2<f64>, n_states:usize, prm: &Parameters,fname:&Stri
 
 pub fn plot_absorb(histogram:&Array2<f64>,prm: &Parameters, n_bins: usize, fname:&String) {
     let mut fig = Figure::new();
-    fig.set_terminal("pngcairo size 1440,1080", fname);
+    fig.set_terminal("pngcairo size 1440,1080", fname)
+    .set_pre_commands("set object 1 rectangle from screen 0,0 to screen 1,1 fillcolor rgb '#000000' behind");
     // fig.set_terminal("svg enhanced size 1440,1080", fname);
 
-    let k_min = prm.k_points.clone().min();
-    let k_max = prm.k_points.clone().max();
+    let k_min = -PI / prm.a_0;
+    let k_max = PI / prm.a_0;
 
-    fig.axes2d().image(histogram, n_bins, n_bins, Some((k_min,0.0,k_max,prm.max_energy * 27.4112)), &[])
-    .set_x_range(AutoOption::Fix(k_min), AutoOption::Fix(k_max))
-    .set_y_range(AutoOption::Fix(0.0), AutoOption::Fix(prm.max_energy * 27.4112))
-    .set_x_ticks(Some((Auto,5)), &[], &[]);
+    let x_min = k_min;
+    // let x_min = -0.4;
+
+    fig.axes2d()
+    .set_x_range(AutoOption::Fix(x_min), AutoOption::Fix(-x_min))
+    .set_y_range(AutoOption::Fix(0.0), AutoOption::Fix(prm.max_energy))
+    .set_x_ticks(Some((Auto,5)), &[MajorScale(2.0),OnAxis(false),Inward(false),Mirror(false)], &[Font("Helvetica", 24.0), TextColor("white")])
+    .set_y_ticks(Some((Auto,5)), &[MajorScale(2.0),OnAxis(false),Inward(false),Mirror(false)], &[Font("Helvetica", 24.0), TextColor("white")])
+    .set_cb_ticks(Some((Auto,5)),&[MajorScale(2.0),OnAxis(false),Inward(false),Mirror(false)], &[Font("Helvetica", 24.0), TextColor("white")])
+    .set_cb_label("", &[Font("Helvetica", 36.0), TextColor("white")])
+    .set_x_label("", &[Font("Helvetica", 36.0), TextColor("white")])
+    .set_y_label("", &[Font("Helvetica", 36.0), TextColor("white")])
+    .set_margins(&[MarginLeft(0.07),MarginBottom(0.07), MarginRight(0.87)])
+    .set_border(true, &[Bottom,Right,Left,Top], &[Color("white")])
+    .image(histogram, n_bins, n_bins, Some((k_min,0.0,k_max,prm.max_energy)), &[])
+    ;
 
     let message = fig.save_to_png(fname, 1440, 1080);
     // let message_svg = fig.save_to_svg(fname, 1440, 1080);

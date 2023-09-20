@@ -27,8 +27,8 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
         kappa_grid2: Array1::zeros(0),
         m: 1.0,
         hbar: 1.0,
-        load_existing: false,
-        max_energy: 0.4,
+        load_existing: true,
+        max_energy: 0.6,
         k_ph_factor: 2
     };
 
@@ -45,7 +45,8 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
     let log_g_min = args[2].parse::<f64>().unwrap();
     let log_g_max = args[3].parse::<f64>().unwrap();
     prm.ng = args[4].parse::<usize>().unwrap();
-    prm.g_wc_grid = Array1::linspace(log_g_min, log_g_max, prm.ng).map(|x| libm::exp10(*x as f64));
+    let temp = Array1::linspace(log_g_min, log_g_max, prm.ng + 1).map(|x| libm::exp10(*x as f64));
+    prm.g_wc_grid = temp.slice(s![..-1]).to_owned();
 
     prm.nk = args[5].parse::<usize>().unwrap();
     prm.n_kappa = args[6].parse::<usize>().unwrap();
@@ -54,6 +55,7 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
     // prm.k_shift = -PI/prm.a_0; // Added for debugging!
 
     prm.k_points = Array1::linspace(-PI/prm.a_0 + prm.k_shift, PI/prm.a_0 + prm.k_shift, prm.nk);
+    // prm.k_points = Array1::linspace(PI/prm.a_0 - 0.05, PI/prm.a_0, prm.nk); // k-points near the K-point
     prm.kappa_grid  = PI / prm.a_0 *  Array1::linspace(prm.n_kappa  as f64 - 1.0, -(prm.n_kappa  as f64 - 1.0), prm.n_kappa );
     prm.kappa_grid2 = PI / prm.a_0 *  Array1::linspace(prm.n_kappa2 as f64 - 1.0, -(prm.n_kappa2 as f64 - 1.0), prm.n_kappa2);
 

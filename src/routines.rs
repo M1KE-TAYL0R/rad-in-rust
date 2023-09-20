@@ -19,21 +19,23 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
         // Set coupling strength in prm
         prm.g_wc = g_wc;
         
+        // let data_fname = filename(&prm, "_absorb_K.npy");
+        // let data_c_fname = filename(&prm, "_absorb_color_K.npy");
         let data_fname = filename(&prm, "_absorb.npy");
         let data_c_fname = filename(&prm, "_absorb_color.npy");
 
-        let n_bins = prm.nk/ prm.k_ph_factor;
+        let n_bins = prm.nk / prm.k_ph_factor;
         let e_max = prm.max_energy;
         let e_min = 0.0;
         let e_array = Array1::linspace(e_min, e_max, n_bins);
         let d_e = (e_max - e_min) / (n_bins as f64 - 1.0);
         let n_states = prm.n_kappa * prm.nf;
         
-        let k_ph_array = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, n_bins);
+        let k_ph_array = Array1::linspace(-prm.a_0/PI, prm.a_0/PI, n_bins);
 
         let mut histogram: Array2<f64> = Array2::zeros((n_bins,n_bins));
-        let mut data_export: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
-        let mut data_export_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
+        let mut data_export: Array3<f64> = Array3::zeros((n_bins,prm.nk, n_states));
+        let mut data_export_c: Array3<f64> = Array3::zeros((n_bins,prm.nk, n_states));
 
         if !(prm.load_existing && Path::new(&data_fname).exists() && Path::new(&data_c_fname).exists()){
 
@@ -71,6 +73,7 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             write_npy(data_c_fname, &data_export_c).unwrap();
         }
         else {
+            println!{"Reading existing data"}
             data_export = read_npy(data_fname).unwrap();
             data_export_c = read_npy(data_c_fname).unwrap();
 
@@ -93,7 +96,8 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             }
         }
         
-        let h_fname = format!("histogram_{}_{}_{}",g_wc, prm.nk, prm.n_kappa);
+        // let h_fname = format!("absorb/histogram_{}_{}_{}_{}_K",g_wc, prm.nk, prm.n_kappa,prm.nf);
+        let h_fname = format!("absorb/histogram_{}_{}_{}_{}",g_wc, prm.nk, prm.n_kappa,prm.nf);
 
         write_file(&histogram, &(h_fname.clone() + ".csv"));
 
