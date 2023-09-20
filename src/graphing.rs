@@ -39,8 +39,10 @@ pub fn plot_absorb(histogram:&Array2<f64>,prm: &Parameters, n_bins: usize, fname
     let k_min = -PI / prm.a_0;
     let k_max = PI / prm.a_0;
 
-    let x_min = k_min;
-    // let x_min = -0.4;
+    let mut x_min = k_min;
+    if prm.near_edge{
+        x_min = -0.4;
+    }
 
     fig.axes2d()
     .set_x_range(AutoOption::Fix(x_min), AutoOption::Fix(-x_min))

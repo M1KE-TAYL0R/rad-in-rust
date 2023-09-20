@@ -7,8 +7,8 @@ use indicatif::ProgressIterator;
 use ndarray_npy::*;
 use std::{usize,f64::consts::PI};
 
-use crate::{parameters::*, graphing::*, solve_hamiltonian::*};
 
+use crate::{parameters::*, graphing::*, solve_hamiltonian::*};
 
 pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
 
@@ -19,12 +19,18 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
         // Set coupling strength in prm
         prm.g_wc = g_wc;
         
-        // let data_fname = filename(&prm, "_absorb_K.npy");
-        // let data_c_fname = filename(&prm, "_absorb_color_K.npy");
-        let data_fname = filename(&prm, "_absorb.npy");
-        let data_c_fname = filename(&prm, "_absorb_color.npy");
+        let mut data_fname = filename(&prm, "_absorb.npy");
+        let mut data_c_fname = filename(&prm, "_absorb_color.npy");
+        if prm.near_edge{
+            data_fname = filename(&prm, "_absorb_K.npy");
+            data_c_fname = filename(&prm, "_absorb_color_K.npy");
+        }
 
-        let n_bins = prm.nk / prm.k_ph_factor;
+        let mut n_bins = prm.nk / prm.k_ph_factor;
+        if prm.near_edge{
+            n_bins = prm.nk * prm.k_ph_factor;
+        }
+
         let e_max = prm.max_energy;
         let e_min = 0.0;
         let e_array = Array1::linspace(e_min, e_max, n_bins);
@@ -42,12 +48,13 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             for k_ph in k_ph_array.iter().progress().enumerate(){
                 println!("Computing {} / {}", k_ph.0, n_bins);
 
-                let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
+                // let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
 
                 let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
                 let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
 
-                (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
+                // (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
+                (data, data_color) = absorb_dispatch(data, data_color, args, &prm.k_points, g_wc, k_ph.1);
 
 
                 data_export.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data.slice(s![..,1..n_states]).to_owned()));
@@ -96,8 +103,10 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             }
         }
         
-        // let h_fname = format!("absorb/histogram_{}_{}_{}_{}_K",g_wc, prm.nk, prm.n_kappa,prm.nf);
-        let h_fname = format!("absorb/histogram_{}_{}_{}_{}",g_wc, prm.nk, prm.n_kappa,prm.nf);
+        let mut h_fname = format!("absorb/histogram_{}_{}_{}_{}",g_wc, prm.nk, prm.n_kappa,prm.nf);
+        if prm.near_edge{
+            h_fname = format!("absorb/histogram_{}_{}_{}_{}_K",g_wc, prm.nk, prm.n_kappa,prm.nf);
+        }
 
         write_file(&histogram, &(h_fname.clone() + ".csv"));
 

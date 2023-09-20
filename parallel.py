@@ -2,15 +2,15 @@ import os
 import numpy as np
 
 # Simulation parameters
-n_sections = 1
-g_min_log =  -1.0
+n_sections = 8
+g_min_log =  -2.0
 g_max_log =  -0.0
 log_g_bounds = np.linspace(g_min_log,g_max_log,n_sections+1)
-ng = 1
-nf = 5
-nk = 360
+ng = 2
+nf = 10
+nk = 2880
 n_kappa = 21
-wc_norm = 0.1
+wc_norm = 0.15
 routine = "absorb"
 
 print(f"Running rad-in-rust with {ng*n_sections} couplings and {nk} k-points")
@@ -20,12 +20,12 @@ print(f"Running rad-in-rust with {ng*n_sections} couplings and {nk} k-points")
 node = "-p action -A action"
 time = "1-00:00:00"
 tasks = "24"
-memory = "24GB"
+memory = "14GB"
 
 
 # Submit many instances of main.py to different nodes
 for ijk in range(n_sections):
-    output = f"{routine}_outputK{ijk}.slurm"
+    output = f"{routine}_output0{ijk}.slurm"
 
     sbatch = open("par_submit.SBATCH","w")
     sbatch.write("#!/bin/bash \n")

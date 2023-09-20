@@ -7,6 +7,48 @@ use crate::{parameters::*, build_hamiltonian::*};
 
 /// Dispatcher that solves the TISE for the system parallelized over many different k-points
 /// for a given coupling strength and command line args
+pub fn absorb_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, 
+    k_points: &Array1<f64>, g_wc: f64, k_ph: &f64) -> (Array2<f64>, Array2<f64>) {
+    
+    let prm = get_parameters(args);
+
+    data.slice_mut(s![..,0]).assign(&k_points);
+
+    let mut data_vec: Vec<(Array1<f64>,Array1<f64>)> = vec![(Array1::zeros(prm.nf * prm.n_kappa + 1), 
+        Array1::zeros(prm.nf * prm.n_kappa + 1)); prm.nk];
+    
+    data_vec.par_iter_mut()
+    .enumerate().for_each( |(k, col)| {
+        
+        let mut prm_k = get_parameters(&args);
+
+        prm_k.k = k_points[k];
+        prm_k.g_wc = g_wc;
+        prm_k.k_shift = k_points[k] - k_ph;
+
+        prm_k.k_ph = *k_ph;
+        prm_k.wc = (prm_k.wc_norm.powi(2) + (k_ph).powi(2)).sqrt();
+        
+        (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
+
+        *col = solve_h(&prm_k);
+
+        let e_min = col.0[0];
+
+        col.0 = &col.0 - e_min;
+    
+    });
+
+    for ijk in 0 .. prm.nk {
+        data.slice_mut(s![ijk,1..]).assign( &(data_vec[ijk].0) );
+        data_color.slice_mut(s![ijk,..]).assign( &(data_vec[ijk].1) );
+    }
+
+    (data, data_color)
+}
+
+/// Dispatcher that solves the TISE for the system parallelized over many different k-points
+/// for a given coupling strength and command line args
 pub fn rayon_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, 
     k_points: &Array1<f64>, g_wc: f64, absorb_wc: Option<f64>) -> (Array2<f64>, Array2<f64>) {
     
