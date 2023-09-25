@@ -29,9 +29,9 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
         m: 1.0,
         hbar: 1.0,
         load_existing: false,
-        max_energy: 0.6,
-        k_ph_factor: 2,
-        near_edge: false
+        max_energy: 1.5,
+        k_ph_factor: 15,
+        near_edge: true
     };
 
     // prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
@@ -57,7 +57,7 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
     // prm.k_shift = -PI/prm.a_0; // Added for debugging!
 
     if prm.near_edge{
-        prm.k_points = Array1::linspace(PI/prm.a_0 - 0.025, PI/prm.a_0 + 0.025, prm.nk); // k-points near the K-point
+        prm.k_points = Array1::linspace(PI/prm.a_0 - 0.03, PI/prm.a_0 + 0.03, prm.nk); // k-points near the K-point
     }
     else{
         prm.k_points = Array1::linspace(-PI/prm.a_0 + prm.k_shift, PI/prm.a_0 + prm.k_shift, prm.nk);

@@ -7,7 +7,7 @@ use crate::{parameters::*, build_hamiltonian::*};
 
 /// Dispatcher that solves the TISE for the system parallelized over many different k-points
 /// for a given coupling strength and command line args
-pub fn absorb_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, 
+pub fn _absorb_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, 
     k_points: &Array1<f64>, g_wc: f64, k_ph: &f64) -> (Array2<f64>, Array2<f64>) {
     
     let prm = get_parameters(args);
@@ -22,9 +22,9 @@ pub fn absorb_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:
         
         let mut prm_k = get_parameters(&args);
 
-        prm_k.k = k_points[k];
         prm_k.g_wc = g_wc;
-        prm_k.k_shift = k_points[k] - k_ph;
+        prm_k.k_shift = k_points[k];
+        prm_k.k = *k_ph + prm.k_shift;
 
         prm_k.k_ph = *k_ph;
         prm_k.wc = (prm_k.wc_norm.powi(2) + (k_ph).powi(2)).sqrt();
@@ -114,7 +114,7 @@ pub fn basic_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&
 
 /// For a given `prm: &Parameters`, this calls the function to build the Hamiltonian and then
 /// solves it's eigen relations. Returns the eigen-energies and p.A photon numbers as a tuple
-fn solve_h (prm: &Parameters) -> (Array1<f64>, Array1<f64>){
+pub fn solve_h (prm: &Parameters) -> (Array1<f64>, Array1<f64>){
 
     let h = construct_h_total(prm);
 

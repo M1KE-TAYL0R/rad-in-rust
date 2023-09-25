@@ -4,20 +4,20 @@ from matplotlib.collections import LineCollection
 import subprocess as sp
 import matplotlib.colors as mcolors
 
-nk = 120
+nk = 360
 wc = 1.0
-nf = 7
-n_kappa = 31
+nf = 5
+n_kappa = 101
 BASIS = "RAD"
 a_0 = 4
-g_wc_array =  [0.1]
+g_wc_array =  [0.0]
 # g_wc_array = [0.103]
-y_max_array = [4.9]
+y_max_array = [1.0]
 # y_max_array = [5]
 nticks = [6]
 n_graph_array = [  20 ]
 # y_max_array = [0.4]
-dark = True
+dark = False
 color = True
 k_shift = 0.0
 
@@ -43,7 +43,7 @@ if dark:
     label = 'dark'
     black = '0.95'
 
-k_points = np.linspace(-np.pi / a_0, np.pi / a_0, nk)
+k_points = np.linspace(-np.pi / a_0 - k_shift, np.pi / a_0 - k_shift, nk)
 
 file_location = "./data/"
 
@@ -53,14 +53,14 @@ for ijk in np.flip(range(len(g_wc_array))):
     y_max = y_max_array[ijk]
 
     # DIR = f"{file_location}gather_data/"
-    IMG_DIR = f"{file_location}"
+    IMG_DIR = f"./disp/"
     # sp.call(f"mkdir -p {DIR}", shell=True)
     #######
     NPol = nf * n_kappa
 
     EPol = np.zeros(( len(k_points), NPol , 2))
     EPol[:,:,0] = np.loadtxt(f"./data/E_RAD_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}.csv", delimiter = ',')[:,1:]
-    EPol[:,:,1] = np.loadtxt(f"./data/E_RAD_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}._color.csv", delimiter = ',')
+    EPol[:,:,1] = np.loadtxt(f"./data/E_RAD_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}_color.csv", delimiter = ',')
 
     # try:
     #     EPol = np.load( f"{IMG_DIR}plot_data_{g_wc}_{nk}_{a_0}_{n_kappa}_{nf}_{wc}.npy")
@@ -145,7 +145,7 @@ for ijk in np.flip(range(len(g_wc_array))):
                     hspace=0.2)
 
     plt.savefig(f"{IMG_DIR}disp_plot_g{np.round(g_wc,3)}_nf{nf}_{label}.jpg",dpi=600)
-    # plt.savefig(f"{IMG_DIR}/disp_plot_g{np.round(g_wc,3)}_nf{nf}_{label}.svg",format='svg')
+    plt.savefig(f"{IMG_DIR}/disp_plot_g{np.round(g_wc,3)}_nf{nf}_{label}.svg",format='svg')
 
     # np.save( f"{IMG_DIR}plot_data_{g_wc}_{nk}_{a_0}_{n_kappa}_{nf}_{wc}.npy", EPol)
 

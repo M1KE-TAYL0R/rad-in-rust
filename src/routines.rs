@@ -48,13 +48,54 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
             for k_ph in k_ph_array.iter().progress().enumerate(){
                 println!("Computing {} / {}", k_ph.0, n_bins);
 
-                // let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
+                let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
 
                 let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
                 let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
 
-                // (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
-                (data, data_color) = absorb_dispatch(data, data_color, args, &prm.k_points, g_wc, k_ph.1);
+                // if prm.near_edge{
+                //     let mut prm_k = get_parameters(&args);
+                //     prm_k.g_wc = g_wc;
+                //     prm_k.k_shift = PI/prm.a_0;
+                //     prm_k.k = *k_ph.1 + prm.k_shift;
+
+                //     prm_k.k_ph = *k_ph.1;
+                //     prm_k.wc = (prm_k.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
+                    
+                //     (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
+
+                //     let mut col = solve_h(&prm_k);
+
+                //     let e_min = col.0[0];
+
+                //     col.0 = &col.0 - e_min;
+
+                //     data.slice_mut(s![0,1..]).assign( &(col.0) );
+                //     data_color.slice_mut(s![0,..]).assign( &(col.1) );
+
+                //     let mut prm_k = get_parameters(&args);
+                //     prm_k.g_wc = g_wc;
+                //     prm_k.k_shift = -PI/prm.a_0;
+                //     prm_k.k = *k_ph.1 + prm.k_shift;
+
+                //     prm_k.k_ph = *k_ph.1;
+                //     prm_k.wc = (prm_k.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
+                    
+                //     (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
+
+                //     let mut col = solve_h(&prm_k);
+
+                //     let e_min = col.0[0];
+
+                //     col.0 = &col.0 - e_min;
+
+                //     data.slice_mut(s![1,1..]).assign( &(col.0) );
+                //     data_color.slice_mut(s![1,..]).assign( &(col.1) );
+                // }
+                // else {
+                    (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
+                //     (data, data_color) = absorb_dispatch(data, data_color, args, &prm.k_points, g_wc, k_ph.1);
+                // }
 
 
                 data_export.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data.slice(s![..,1..n_states]).to_owned()));
