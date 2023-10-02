@@ -54,7 +54,7 @@ Command line input has the form:
 */
 fn main() {
 
-    // env::set_var("RUST_BACKTRACE", "1");
+    env::set_var("RUST_BACKTRACE", "1");
     
     // Start the timer to determine
     let now = Instant::now();

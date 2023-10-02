@@ -219,18 +219,20 @@ pub fn get_disps(mut prm: Parameters, args:&Vec<String> ) {
                 Err(e) => println!("Reading error: {e:?}"),
             }
 
-            // let read_color: Result<Array2<f64>, ReadError> = 
-            //     read_file(&color_fname,(prm.nk, prm.nf * prm.n_kappa ));
+            let read_color: Result<Array2<f64>, ReadError> = 
+                read_file(&color_fname,(prm.nk, prm.nf * prm.n_kappa ));
 
-            // match read_color {
-            //     Ok(v) => data_color = v,
-            //     Err(e) => println!("Reading error: {e:?}"),
-            // }
+            match read_color {
+                Ok(v) => data_color = v,
+                Err(e) => println!("Reading error: {e:?}"),
+            }
         }
 
         // Initialize image file name and plot data
-        let image_fname = filename(&prm, ".png");
-        plot_disp(&data, 30, &prm,&image_fname);
+        // let image_fname = filename(&prm, ".png");
+        // plot_disp(&data, 30, &prm,&image_fname);
+        let image_fname = "disp/test.svg";
+        plotters_disp(&data, &data_color, 30, &prm, image_fname).unwrap();
     }
 }
 

@@ -28,10 +28,10 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
         kappa_grid2: Array1::zeros(0),
         m: 1.0,
         hbar: 1.0,
-        load_existing: false,
+        load_existing: true,
         max_energy: 1.5,
-        k_ph_factor: 15,
-        near_edge: true
+        k_ph_factor: 1,
+        near_edge: false
     };
 
     // prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
