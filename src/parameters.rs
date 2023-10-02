@@ -31,7 +31,8 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
         load_existing: false,
         max_energy: 1.5,
         k_ph_factor: 15,
-        near_edge: true
+        near_edge: false,
+        hamiltonian: "RAD".to_string()
     };
 
     // prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
@@ -97,6 +98,7 @@ pub struct Parameters {
     pub load_existing: bool,
     pub max_energy: f64,
     pub k_ph_factor: usize,
-    pub near_edge: bool
+    pub near_edge: bool,
+    pub hamiltonian: String
 }
 

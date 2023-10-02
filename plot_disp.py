@@ -4,15 +4,15 @@ from matplotlib.collections import LineCollection
 import subprocess as sp
 import matplotlib.colors as mcolors
 
-nk = 360
+nk = 1200
 wc = 1.0
-nf = 5
+nf = 7
 n_kappa = 101
 BASIS = "RAD"
 a_0 = 4
 g_wc_array =  [0.0]
 # g_wc_array = [0.103]
-y_max_array = [1.0]
+y_max_array = [5.0]
 # y_max_array = [5]
 nticks = [6]
 n_graph_array = [  20 ]
@@ -79,7 +79,7 @@ for ijk in np.flip(range(len(g_wc_array))):
 
 
     # plt.style.use('dark_background')
-    fs = 23
+    fs = 16
     n_states = n_graph_array[ijk]
     plot_states = np.arange( n_states )
     fig, ax = plt.subplots()
@@ -110,7 +110,7 @@ for ijk in np.flip(range(len(g_wc_array))):
         # lc.set_linewidth(3)
         line = ax.add_collection(lc)
         cbar = fig.colorbar(line,ax=ax)
-        cbar.ax.tick_params(labelsize=fs)
+        cbar.ax.tick_params(labelsize=fs) 
     else:
         for state in plot_states:
             plt.plot( k_points, EPol[:,state], color=black)
@@ -120,10 +120,10 @@ for ijk in np.flip(range(len(g_wc_array))):
     # ax.set_ylim(top=y_max)
     plt.xlim(min(k_points),max(k_points))
     # plt.rcParams["figure.figsize"] = (2,1.5)
-    plt.xlabel("$k$ (a.u.)",fontsize=fs)
+    plt.xlabel(r"$k = k_\beta$ (a.u.)",fontsize=fs)
     plt.yticks(fontsize = fs)#, ticks = np.linspace(0 , y_max, nticks[ijk], True))
-    # plt.xticks(ticks = [- np.pi / 4,0, np.pi / 4], labels = ["$-\pi/a_0$", "0", "$\pi/a_0$"],fontsize = fs)
-    plt.title(f"$g / \omega_c =$ {'%s' % float('%.3g' % g_wc)}",fontsize=fs)
+    plt.xticks(ticks = [- np.pi / 4,0, np.pi / 4], labels = ["$-\pi/a_0$", "0", "$\pi/a_0$"],fontsize = fs)
+    # plt.title(f"$g / \omega_c =$ {'%s' % float('%.3g' % g_wc)}",fontsize=fs)
     plt.ylabel("Energy (a.u.)",fontsize=fs)
     plt.subplots_adjust(left=0.17,
                     bottom=0.18,

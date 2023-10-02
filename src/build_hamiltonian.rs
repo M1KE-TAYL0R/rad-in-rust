@@ -8,10 +8,20 @@ use crate::parameters::*;
 
 /// Wrapper function that calls other function to generate each component of the Hamiltonian:
 /// 
-/// H = H_ph + T_RAD + V_RAD
+/// H_RAD = H_ph + T_RAD + V_RAD
+/// H_C = H_ph + T_C + V 
 /// 
 /// Returns the total Hamiltonian as an `Array2<c64>`
 pub fn construct_h_total(prm:&Parameters) -> Array2<c64> {
+
+    match prm.hamiltonian.as_str() {
+        "RAD" => return construct_rad_h(prm),
+        "pA"  => panic!("Coulomb Gauge Hamiltonian not implemented yet"),
+        _     => panic!("Invalid Hamiltonian type inputted")
+    };
+}
+
+fn construct_rad_h(prm:&Parameters) -> Array2<c64> {
     // Define identities: 
     let i_m = iden(prm.n_kappa);
 
@@ -21,6 +31,7 @@ pub fn construct_h_total(prm:&Parameters) -> Array2<c64> {
     let h_ph = get_h_ph(&prm);
 
     let mut h_total: Array2<c64> = Array2::zeros((prm.nf*prm.n_kappa,prm.nf*prm.n_kappa));
+
     h_total = h_total + kron(&i_m, &h_ph);
     h_total = h_total + k_e;
     h_total = h_total + v_shifted;
