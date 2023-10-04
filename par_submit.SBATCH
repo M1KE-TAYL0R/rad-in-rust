@@ -7,6 +7,4 @@
 #SBATCH --ntasks-per-node=24 
 #SBATCH --mem 14GB 
  
-cargo build --release 
- 
-/scratch/mtayl29/rad-in-rust/target/release/rad-in-rust disp 1.0 -10.0 -0.0 1 1200 101 7
+/scratch/mtayl29/rad-in-rust/target/release/rad-in-rust disp 1.0 -0.60205999132 -0.0 1 1200 21 7

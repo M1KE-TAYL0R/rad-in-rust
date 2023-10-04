@@ -3,49 +3,7 @@ use ndarray_linalg::{c64,*};
 use rayon::{iter::{IntoParallelRefMutIterator,ParallelIterator}, prelude::IndexedParallelIterator};
 use indicatif::{ParallelProgressIterator, ProgressIterator};
 
-use crate::{parameters::*, build_hamiltonian::*};
-
-/// Dispatcher that solves the TISE for the system parallelized over many different k-points
-/// for a given coupling strength and command line args
-pub fn _absorb_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, 
-    k_points: &Array1<f64>, g_wc: f64, k_ph: &f64) -> (Array2<f64>, Array2<f64>) {
-    
-    let prm = get_parameters(args);
-
-    data.slice_mut(s![..,0]).assign(&k_points);
-
-    let mut data_vec: Vec<(Array1<f64>,Array1<f64>)> = vec![(Array1::zeros(prm.nf * prm.n_kappa + 1), 
-        Array1::zeros(prm.nf * prm.n_kappa + 1)); prm.nk];
-    
-    data_vec.par_iter_mut()
-    .enumerate().for_each( |(k, col)| {
-        
-        let mut prm_k = get_parameters(&args);
-
-        prm_k.g_wc = g_wc;
-        prm_k.k_shift = k_points[k];
-        prm_k.k = *k_ph + prm.k_shift;
-
-        prm_k.k_ph = *k_ph;
-        prm_k.wc = (prm_k.wc_norm.powi(2) + (k_ph).powi(2)).sqrt();
-        
-        (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
-
-        *col = solve_h(&prm_k);
-
-        let e_min = col.0[0];
-
-        col.0 = &col.0 - e_min;
-    
-    });
-
-    for ijk in 0 .. prm.nk {
-        data.slice_mut(s![ijk,1..]).assign( &(data_vec[ijk].0) );
-        data_color.slice_mut(s![ijk,..]).assign( &(data_vec[ijk].1) );
-    }
-
-    (data, data_color)
-}
+use crate::{parameters::*, rad_hamiltonian::*, pa_hamiltonian::*};
 
 /// Dispatcher that solves the TISE for the system parallelized over many different k-points
 /// for a given coupling strength and command line args
@@ -125,16 +83,74 @@ pub fn solve_h (prm: &Parameters) -> (Array1<f64>, Array1<f64>){
     (eig_e,n_pa_diag)
 }
 
+/// Wrapper function that calls other function to generate each component of the Hamiltonian:
+/// 
+/// H_RAD = H_ph + T_RAD + V_RAD
+/// H_C = H_ph + T_C + V 
+/// 
+/// Returns the total Hamiltonian as an `Array2<c64>`
+pub fn construct_h_total(prm:&Parameters) -> Array2<c64> {
+
+    match prm.hamiltonian.as_str() {
+        "RAD" => return construct_rad_h(prm),
+        "pA"  => return construct_pa_h(prm),
+        _     => panic!("Invalid Hamiltonian type inputted")
+    };
+}
+
 /// Returns the Coulomb gauge <a^+ a> for a given eigenvector (`eig_v`) in the RAD representation
 /// calculated for the parameters in `prm`
 fn ave_photon_pa(prm: &Parameters, eig_v:Array2<c64>) -> Array1<f64> {
     let i_m = iden(prm.n_kappa);
 
-    let a = get_a(prm.nf, prm);
+    let a = get_a_rad(prm.nf, prm);
 
     let n_pa = kron(&i_m, &(&a.t()).dot(&a));
     let n_photons:Array2<c64> = (&eig_v).t().dot(&(&n_pa).dot(&eig_v));
     let n_ph_diag:Array1<f64> = n_photons.into_diag().iter().map(|&x| x.abs()).collect();
 
     n_ph_diag
+}
+
+/// DEPRECIATED -- is incorrect! (I think)
+/// Dispatcher that solves the TISE for the system parallelized over many different k-points
+/// for a given coupling strength and command line args
+pub fn _absorb_dispatch(mut data: Array2<f64>, mut data_color: Array2<f64>, args:&Vec<String>, 
+    k_points: &Array1<f64>, g_wc: f64, k_ph: &f64) -> (Array2<f64>, Array2<f64>) {
+    
+    let prm = get_parameters(args);
+
+    data.slice_mut(s![..,0]).assign(&k_points);
+
+    let mut data_vec: Vec<(Array1<f64>,Array1<f64>)> = vec![(Array1::zeros(prm.nf * prm.n_kappa + 1), 
+        Array1::zeros(prm.nf * prm.n_kappa + 1)); prm.nk];
+    
+    data_vec.par_iter_mut()
+    .enumerate().for_each( |(k, col)| {
+        
+        let mut prm_k = get_parameters(&args);
+
+        prm_k.g_wc = g_wc;
+        prm_k.k_shift = k_points[k];
+        prm_k.k = *k_ph + prm.k_shift;
+
+        prm_k.k_ph = *k_ph;
+        prm_k.wc = (prm_k.wc_norm.powi(2) + (k_ph).powi(2)).sqrt();
+        
+        (prm_k.omega, prm_k.xi_g) = get_couplings(&prm_k);
+
+        *col = solve_h(&prm_k);
+
+        let e_min = col.0[0];
+
+        col.0 = &col.0 - e_min;
+    
+    });
+
+    for ijk in 0 .. prm.nk {
+        data.slice_mut(s![ijk,1..]).assign( &(data_vec[ijk].0) );
+        data_color.slice_mut(s![ijk,..]).assign( &(data_vec[ijk].1) );
+    }
+
+    (data, data_color)
 }

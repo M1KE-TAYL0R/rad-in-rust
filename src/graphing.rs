@@ -37,26 +37,35 @@ pub fn plotters_disp(data:&Array2<f64>,data_c:&Array2<f64>, n_states:usize, prm:
     let y_max = 5.0 as f32;
     let c_max = data_c.max() as f32;
 
+    let scale_factor = 10;
+
     let zpe = data.column(1).to_vec().into_iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
     let zpe_vec: Array1<f64> = Array1::ones(prm.nk)*zpe;
 
     let x = data.slice(s![..,0]);
 
-    let root = SVGBackend::new(fname, (1440,1080)).into_drawing_area();
+    let root = SVGBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
+
+    let original_style = ShapeStyle {
+        color: BLACK.into(),
+        filled: false,
+        stroke_width: 2*scale_factor,
+    };
 
     root.fill(&WHITE)?;
     let mut chart = ChartBuilder::on(&root)
         .margin(20)
-        .caption("Test Dispersion", ("helvetica", 50))
-        .x_label_area_size(70)
-        .y_label_area_size(100)
+        // .caption("Test Dispersion", ("helvetica", 50*scale_factor))
+        .x_label_area_size(70*scale_factor)
+        .y_label_area_size(100*scale_factor)
         .build_cartesian_2d(-x_max..x_max, 0.0 .. y_max)?;
 
     chart.configure_mesh()
-    .x_label_style(("helvetica", 50))
-    .y_label_style(("helvetica", 50))
+    .x_label_style(("helvetica", 50*scale_factor))
+    .y_label_style(("helvetica", 50*scale_factor))
     .disable_mesh()
-    .set_all_tick_mark_size(20)
+    .set_all_tick_mark_size(20*scale_factor)
+    .bold_line_style(original_style)
     .x_label_formatter(&|v| format!("{:.1}", v))
     .y_label_formatter(&|v| format!("{:.1}", v))
     .draw()?;
@@ -67,27 +76,28 @@ pub fn plotters_disp(data:&Array2<f64>,data_c:&Array2<f64>, n_states:usize, prm:
         let color = data_c.column(m);
         let y = col.to_owned() - &zpe_vec;
 
-        chart.draw_series(x.iter().enumerate().map(|(ind, el)| {
-            if ind != 0 {
-                let temp = [(*el as f32, y[ind] as f32), (x[ind -1] as f32, y[ind-1] as f32)];
-                let temp_c = color[ind];
-                let c = VulcanoHSL::get_color_normalized(temp_c as f32, 0.0, c_max);
-                // EmptyElement::at(temp)
-                //     + Circle::new((0,0), 3, VulcanoHSL::get_color_normalized(temp_c as f32, 0.0, c_max))
-                PathElement::new(temp, c.stroke_width(4))
-            }
-            else {
-                PathElement::new([(0.0 as f32,0.0 as f32), (0.0 as f32,0.0 as f32)], WHITE)
-            }
-        }))?;
-
         // chart.draw_series(x.iter().enumerate().map(|(ind, el)| {
-        //     let temp = (*el as f32, y[ind] as f32);
-        //     EmptyElement::at(temp)
-        //         + Circle::new((0,0), 3, VulcanoHSL::get_color_normalized(color[ind] as f32, 0.0, c_max))
+        //     if ind != 0 && y[ind] < (y_max as f64){ 
+        //         let temp = [(*el as f32, y[ind] as f32), (x[ind -1] as f32, y[ind-1] as f32)];
+        //         let temp_c = color[ind];
+        //         let c = VulcanoHSL::get_color_normalized(temp_c as f32, 0.0, c_max);
+        //         PathElement::new(temp, c.stroke_width(4))
+        //     }
+        //     else {
+        //         PathElement::new([(0.0 as f32,0.0 as f32), (0.0 as f32,0.0 as f32)], WHITE)
+        //     }
         // }))?;
 
-        // chart.draw_series(LineSeries::new(test, VulcanoHSL::get_color_normalized(3.0, 0.0, 5.0)) )?;
+        chart.draw_series(x.iter().enumerate().map(|(ind, el)| {
+            if y[ind] < (y_max as f64){
+            let temp = (*el as f32, y[ind] as f32);
+            EmptyElement::at(temp)
+                + Circle::new((0,0), 3*scale_factor, VulcanoHSL::get_color_normalized(color[ind] as f32, 0.0, c_max).filled())
+            }
+            else {
+                EmptyElement::at((0.,0.)) + Circle::new((0,0), 1, VulcanoHSL::get_color(0.0))
+            }
+        }))?;
 
     }
 

@@ -4,7 +4,8 @@
 // use ndarray_csv::{Array2Writer, Array2Reader, ReadError};
 use std::{env, time::Instant};
 
-mod build_hamiltonian;
+mod rad_hamiltonian;
+mod pa_hamiltonian;
 
 pub mod parameters;
 use parameters::*;

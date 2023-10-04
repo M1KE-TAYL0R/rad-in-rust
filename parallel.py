@@ -1,15 +1,18 @@
 import os
 import numpy as np
 
+# Compile on head node
+os.system("cargo build --release")
+
 # Simulation parameters
 n_sections = 1
-g_min_log =  -10
+g_min_log =  -0.60205999132
 g_max_log =  -0.0
 log_g_bounds = np.linspace(g_min_log,g_max_log,n_sections+1)
 ng = 1
 nf = 7
 nk = 1200
-n_kappa = 101
+n_kappa = 21
 wc_norm = 1.0
 routine = "disp"
 
@@ -40,7 +43,7 @@ for ijk in range(n_sections):
     # sbatch.write( "export OMP_NUM_THREADS=1 \n")
     # sbatch.write( "export MKL_NUM_THREADS=1 \n \n")
 
-    sbatch.write(f"cargo build --release \n \n")
+    # sbatch.write(f"cargo build --release \n \n")
     sbatch.write(f"/scratch/mtayl29/rad-in-rust/target/release/rad-in-rust {routine} {wc_norm} {log_g_bounds[ijk]} {log_g_bounds[ijk+1]} {ng} {nk} {n_kappa} {nf}")
 
     sbatch.close()

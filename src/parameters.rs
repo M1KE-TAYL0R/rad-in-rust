@@ -1,4 +1,5 @@
 use std::{usize,f64::consts::PI};
+use ndarray_linalg::c64;
 use ndarray::*;
 
 /// From the command line arguments `args` this populates a `Parameters` struct and returns it
@@ -30,9 +31,9 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
         hbar: 1.0,
         load_existing: true,
         max_energy: 1.5,
-        k_ph_factor: 15,
+        k_ph_factor: 1,
         near_edge: false,
-        hamiltonian: "RAD".to_string()
+        hamiltonian: "pA".to_string()
     };
 
     // prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);
@@ -102,3 +103,39 @@ pub struct Parameters {
     pub hamiltonian: String
 }
 
+pub struct PrmArrays {
+    pub g_wc_grid: Array1<f64>,
+    pub kappa_grid: Array1<f64>,
+    pub kappa_grid2: Array1<f64>,
+    pub k_points: Array1<f64>
+}
+
+pub struct RADCouplings {
+    pub omega: f64,
+    pub xi_g: f64,
+}
+
+
+
+/// Converts an `Array1<f64>` to an `Array1<c64>`
+pub fn to_c_1(arr:Array1<f64>) -> Array1<c64> {
+    let new_arr: Array1<c64> = arr.iter().map(|&e| c64::from(e)).collect();
+    new_arr
+}
+
+/// Converts an `Array2<f64>` to an `Array2<c64>`
+pub fn to_c_2(arr:Array2<f64>) -> Array2<c64>{
+
+    let new_arr = arr.map(|x| c64::from(x));
+
+    new_arr    
+}
+
+/// Finds the identity matrix of size `n`
+pub fn iden(n:usize) -> Array2<c64>{
+    let one_d: Array1<f64> = Array1::ones(n);
+    let one_d_c = to_c_1(one_d);
+
+    let iden = Array2::from_diag(&one_d_c);
+    iden
+}

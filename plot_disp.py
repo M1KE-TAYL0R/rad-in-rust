@@ -10,7 +10,7 @@ nf = 7
 n_kappa = 101
 BASIS = "RAD"
 a_0 = 4
-g_wc_array =  [0.0]
+g_wc_array =  [0.25]
 # g_wc_array = [0.103]
 y_max_array = [5.0]
 # y_max_array = [5]
@@ -45,7 +45,7 @@ if dark:
 
 k_points = np.linspace(-np.pi / a_0 - k_shift, np.pi / a_0 - k_shift, nk)
 
-file_location = "./data/"
+file_location = "./disp/"
 
 e_min = 0
 for ijk in np.flip(range(len(g_wc_array))):
@@ -107,6 +107,7 @@ for ijk in np.flip(range(len(g_wc_array))):
         else:
             lc = LineCollection(all_segments, cmap='jet')
         lc.set_array(cols)
+        lc.set(capstyle = "round")
         # lc.set_linewidth(3)
         line = ax.add_collection(lc)
         cbar = fig.colorbar(line,ax=ax)

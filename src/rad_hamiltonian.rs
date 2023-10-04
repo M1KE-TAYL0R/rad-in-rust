@@ -6,28 +6,13 @@ use statrs::function::gamma::gamma_ui;
 
 use crate::parameters::*;
 
-/// Wrapper function that calls other function to generate each component of the Hamiltonian:
-/// 
-/// H_RAD = H_ph + T_RAD + V_RAD
-/// H_C = H_ph + T_C + V 
-/// 
-/// Returns the total Hamiltonian as an `Array2<c64>`
-pub fn construct_h_total(prm:&Parameters) -> Array2<c64> {
-
-    match prm.hamiltonian.as_str() {
-        "RAD" => return construct_rad_h(prm),
-        "pA"  => panic!("Coulomb Gauge Hamiltonian not implemented yet"),
-        _     => panic!("Invalid Hamiltonian type inputted")
-    };
-}
-
-fn construct_rad_h(prm:&Parameters) -> Array2<c64> {
+pub fn construct_rad_h(prm:&Parameters) -> Array2<c64> {
     // Define identities: 
     let i_m = iden(prm.n_kappa);
 
 
-    let k_e = get_kinetic(&prm);
-    let v_shifted = get_shifted_v(&prm);
+    let k_e = get_t_rad(&prm);
+    let v_shifted = get_v_rad(&prm);
     let h_ph = get_h_ph(&prm);
 
     let mut h_total: Array2<c64> = Array2::zeros((prm.nf*prm.n_kappa,prm.nf*prm.n_kappa));
@@ -50,14 +35,14 @@ fn get_h_ph(prm:&Parameters) -> Array2<c64>{
 }
 
 /// Calculates T_RAD for a given set of parameters `prm`
-fn get_kinetic(prm:&Parameters) -> Array2<c64>{
+fn get_t_rad(prm:&Parameters) -> Array2<c64>{
     
     let i_m = iden(prm.n_kappa);
     let i_ph = iden(prm.nf);
 
     let m_eff = c64::from(prm.m * (1.0 + 2.0 * prm.g_wc.powi(2)));
 
-    let a = get_a(prm.nf, prm);
+    let a = get_a_rad(prm.nf, prm);
 
     let p = to_c_2(Array2::from_diag(&(prm.kappa_grid.clone() + prm.k)));
 
@@ -69,8 +54,8 @@ fn get_kinetic(prm:&Parameters) -> Array2<c64>{
     k_e
 }
 
-/// Calculates T_RAD for a given set of parameters `prm`
-fn get_shifted_v(prm:&Parameters) -> Array2<c64>{
+/// Calculates V_RAD for a given set of parameters `prm`
+fn get_v_rad(prm:&Parameters) -> Array2<c64>{
     
     // Generate Chi
     let b = get_b(prm.nf);
@@ -144,7 +129,7 @@ fn get_b(nf:usize) -> Array2<c64>{
 }
 
 /// Calculates the Coulomb gauge a operator matrix in the b Fock state basis
-pub fn get_a(nf:usize, prm:&Parameters) -> Array2<c64>{
+pub fn get_a_rad(nf:usize, prm:&Parameters) -> Array2<c64>{
     let wc = prm.wc;
     let omega = prm.omega;
 
@@ -156,27 +141,4 @@ pub fn get_a(nf:usize, prm:&Parameters) -> Array2<c64>{
     let b = get_b(nf);
 
     -u * &b.t() + v * &b 
-}
-
-/// Converts an `Array1<f64>` to an `Array1<c64>`
-fn to_c_1(arr:Array1<f64>) -> Array1<c64> {
-    let new_arr: Array1<c64> = arr.iter().map(|&e| c64::from(e)).collect();
-    new_arr
-}
-
-/// Converts an `Array2<f64>` to an `Array2<c64>`
-fn to_c_2(arr:Array2<f64>) -> Array2<c64>{
-
-    let new_arr = arr.map(|x| c64::from(x));
-
-    new_arr    
-}
-
-/// Finds the identity matrix of size `n`
-pub fn iden(n:usize) -> Array2<c64>{
-    let one_d: Array1<f64> = Array1::ones(n);
-    let one_d_c = to_c_1(one_d);
-
-    let iden = Array2::from_diag(&one_d_c);
-    iden
 }
