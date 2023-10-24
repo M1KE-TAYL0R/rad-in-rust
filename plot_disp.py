@@ -7,19 +7,20 @@ import matplotlib.colors as mcolors
 nk = 1200
 wc = 1.0
 nf = 7
-n_kappa = 101
+n_kappa = 21
 BASIS = "RAD"
 a_0 = 4
-g_wc_array =  [0.25]
+g_wc_array =  [ 0.25]
 # g_wc_array = [0.103]
-y_max_array = [5.0]
+y_max_array = [5.0, 5.0]
 # y_max_array = [5]
-nticks = [6]
-n_graph_array = [  20 ]
+nticks = [6,6]
+n_graph_array = [  20, 20]
 # y_max_array = [0.4]
 dark = False
 color = True
 k_shift = 0.0
+both = True
 
 def create_smooth_dark_colormap():
     # Define the color transitions for the colormap
@@ -59,24 +60,14 @@ for ijk in np.flip(range(len(g_wc_array))):
     NPol = nf * n_kappa
 
     EPol = np.zeros(( len(k_points), NPol , 2))
-    EPol[:,:,0] = np.loadtxt(f"./data/E_RAD_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}.csv", delimiter = ',')[:,1:]
-    EPol[:,:,1] = np.loadtxt(f"./data/E_RAD_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}_color.csv", delimiter = ',')
 
-    # try:
-    #     EPol = np.load( f"{IMG_DIR}plot_data_{g_wc}_{nk}_{a_0}_{n_kappa}_{nf}_{wc}.npy")
-    #     # EPol = np.load( f"{DIR}g{'%s' % float('%.4g' % g_wc)}_nk{nk}_nf{nf}_wc{wc}_a0{a_0}_nkappa{n_kappa}.npy")
-    #     print(f"g/w = {g_wc} exists")
-    # except:
-    #     EPol = np.zeros(( len(k_points), NPol , 2))
-    #     for k_ind, k in enumerate( k_points ):
-    #         print (k)
-    #         data = np.loadtxt( f"{file_location}data/E_{BASIS}_k{np.round(k,3)}_{nf}_{n_kappa}_gwc{np.round(g_wc,7)}_wc{np.round(wc,4)}.dat", delimiter = ',' )
-    #         EPol[k_ind,:,0] = data[:,0]
-    #         EPol[k_ind,:,1] = data[:,1]
-    # if ijk == np.max(range(len(g_wc_array))):
-    #     e_min = np.min(EPol[:,0,0])
-    #     # EPol[:,:,0] = EPol[:,:,0] - e_min
-
+    if both:
+        BASIS = "RAD"
+        EPol[:,:,0] = np.loadtxt(f"./data/E_{BASIS}_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}.csv", delimiter = ',')[:,1:]
+        EPol[:,:,1] = np.loadtxt(f"./data/E_{BASIS}_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}_color.csv", delimiter = ',')
+    else:
+        EPol[:,:,0] = np.loadtxt(f"./data/E_{BASIS}_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}.csv", delimiter = ',')[:,1:]
+        EPol[:,:,1] = np.loadtxt(f"./data/E_{BASIS}_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}_color.csv", delimiter = ',')
 
     # plt.style.use('dark_background')
     fs = 16
@@ -108,6 +99,7 @@ for ijk in np.flip(range(len(g_wc_array))):
             lc = LineCollection(all_segments, cmap='jet')
         lc.set_array(cols)
         lc.set(capstyle = "round")
+        lc.set_clim(0,4)
         # lc.set_linewidth(3)
         line = ax.add_collection(lc)
         cbar = fig.colorbar(line,ax=ax)
@@ -115,6 +107,60 @@ for ijk in np.flip(range(len(g_wc_array))):
     else:
         for state in plot_states:
             plt.plot( k_points, EPol[:,state], color=black)
+
+    if both:
+        BASIS = "pA"
+        n_kappa = 501
+        nk = 30
+        nf = 14
+        NPol = nf * n_kappa
+        k_points = np.linspace(-np.pi / a_0 - k_shift, np.pi / a_0 - k_shift, nk)
+        E_Pol2 = np.zeros(( len(k_points), NPol , 2))
+        E_Pol2[:,:,0] = np.loadtxt(f"./data/E_{BASIS}_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}.csv", delimiter = ',')[:,1:]
+        E_Pol2[:,:,1] = np.loadtxt(f"./data/E_{BASIS}_nk{nk}_nf{nf}_nkappa{n_kappa}_gwc{g_wc:.7f}_wc{wc:.4f}_kshift{k_shift:.2f}_color.csv", delimiter = ',')
+        e_min = np.min(E_Pol2[:,0,0])
+
+        n = 1
+        x = k_points[::n]
+        y = E_Pol2[::n,0,0] - e_min
+        z = E_Pol2[::n,0,1]
+        
+        for lmn in range(n_states):
+            x = np.append(x,k_points[::n])
+            y = np.append(y, E_Pol2[::n,lmn,0] - e_min)
+            z = np.append(z, E_Pol2[::n,lmn,1])
+
+        plt.scatter(x,y,c=z, s = 15, cmap = "jet", marker='.')
+            
+        # cbar = fig.colorbar(line,ax=ax)
+
+        # cols = np.ndarray.flatten(((E_Pol2[1:,:n_states,1] + E_Pol2[:-1,:n_states,1]) / 2 ).T)
+
+        # for lmn in range(n_states):
+        #     x = k_points
+        #     y = (E_Pol2[:,lmn,0] - e_min)
+
+        #     points = np.array([x, y]).T.reshape(-1, 1, 2)
+        #     segments = np.concatenate([points[:-1], points[1:]], axis=1)
+        #     if lmn > 0:
+        #         all_segments=np.concatenate((all_segments, segments), axis=0)
+        #     else:
+        #         all_segments = segments
+
+        # for lmn in range(all_segments.shape[0]):
+        #     if all_segments[lmn,0,1] > y_max:
+        #         cols[lmn] = np.min(cols)
+
+        # if dark:
+        #     lc = LineCollection(all_segments, cmap=dark_colormap)
+        # else:
+        #     lc = LineCollection(all_segments, cmap='jet')
+        # lc.set_array(cols)
+        # lc.set(capstyle = "round")
+        # # lc.set_linewidth(3)
+        # line = ax.add_collection(lc)
+
+
 
     plt.ylim(0.0,y_max)
     # plt.yscale('log')
@@ -124,7 +170,7 @@ for ijk in np.flip(range(len(g_wc_array))):
     plt.xlabel(r"$k = k_\beta$ (a.u.)",fontsize=fs)
     plt.yticks(fontsize = fs)#, ticks = np.linspace(0 , y_max, nticks[ijk], True))
     plt.xticks(ticks = [- np.pi / 4,0, np.pi / 4], labels = ["$-\pi/a_0$", "0", "$\pi/a_0$"],fontsize = fs)
-    # plt.title(f"$g / \omega_c =$ {'%s' % float('%.3g' % g_wc)}",fontsize=fs)
+    plt.title(f"$\gamma_0 / \omega_0 =$ {'%s' % float('%.3g' % g_wc)}",fontsize=fs)
     plt.ylabel("Energy (a.u.)",fontsize=fs)
     plt.subplots_adjust(left=0.17,
                     bottom=0.18,

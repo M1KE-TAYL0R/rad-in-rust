@@ -81,6 +81,14 @@ fn main() {
 
         get_absorption(prm, &args_abs);
     }
+    else if args[1] == "disp2d" {
+        let args_abs = &args[1..].to_vec();
+        
+        // Initialize the prm struct based off the command-line arguments
+        let prm = get_parameters(args_abs);
+
+        get_disps_2_d(prm, &args_abs);
+    }
     else {
         panic!("{} is not a valid routine", args[1])
     }

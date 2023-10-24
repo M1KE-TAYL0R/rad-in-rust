@@ -101,15 +101,25 @@ pub fn construct_h_total(prm:&Parameters) -> Array2<c64> {
 /// Returns the Coulomb gauge <a^+ a> for a given eigenvector (`eig_v`) in the RAD representation
 /// calculated for the parameters in `prm`
 fn ave_photon_pa(prm: &Parameters, eig_v:Array2<c64>) -> Array1<f64> {
-    let i_m = iden(prm.n_kappa);
 
-    let a = get_a_rad(prm.nf, prm);
+    let i_m = iden(prm.n_kappa);
+    let a: Array2<c64>;
+
+    match prm.hamiltonian.as_str() {
+        "RAD" => {
+            a = get_a_rad(prm.nf, prm);
+        },
+        "pA"  => {
+            a = get_a_pa(prm.nf);
+        },
+        _     => panic!("Invalid Hamiltonian type inputted")
+    };
 
     let n_pa = kron(&i_m, &(&a.t()).dot(&a));
     let n_photons:Array2<c64> = (&eig_v).t().dot(&(&n_pa).dot(&eig_v));
     let n_ph_diag:Array1<f64> = n_photons.into_diag().iter().map(|&x| x.abs()).collect();
 
-    n_ph_diag
+    return n_ph_diag
 }
 
 /// DEPRECIATED -- is incorrect! (I think)

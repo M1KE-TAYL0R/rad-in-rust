@@ -33,7 +33,7 @@ pub fn get_parameters(args: &Vec<String>) -> Parameters{
         max_energy: 1.5,
         k_ph_factor: 1,
         near_edge: false,
-        hamiltonian: "pA".to_string()
+        hamiltonian: "RAD".to_string()
     };
 
     // prm.k_points = Array1::linspace(-prm.a_0/PI + prm.k_shift, prm.a_0/PI + prm.k_shift, prm.nk);

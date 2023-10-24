@@ -1,6 +1,6 @@
 use std::f64::consts::PI;
 use gnuplot::*;
-use ndarray::{Array2,Array1,s};
+use ndarray::{Array2,Array1,s,Array3};
 use plotters::{prelude::*, style::Color};
 use statrs::statistics::Statistics;
 
@@ -99,6 +99,79 @@ pub fn plotters_disp(data:&Array2<f64>,data_c:&Array2<f64>, n_states:usize, prm:
             }
         }))?;
 
+    }
+
+    // To avoid the IO failure being ignored silently, we manually call the present function
+    root.present().expect("Unable to write result to file, please make sure 'plotters-doc-data' dir exists under current dir");
+    println!("Result has been saved to {}", fname);
+
+    Ok(())
+}
+
+pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, prm: &Parameters,fname:&str) -> Result<(), Box<dyn std::error::Error>>{
+    let x_max = PI / prm.a_0;
+    let z_max = PI / prm.a_0;
+    let y_max = 2.0;
+    let _c_max = data_c.max();
+
+    let x_array = Array1::linspace(-x_max, x_max, prm.nk * 2);
+    let z_array = Array1::linspace(-x_max, x_max, prm.nk * 2);
+
+    let scale_factor = 10;
+
+    let zpe = data.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+
+    // let root = SVGBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
+    let root = BitMapBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
+
+
+    root.fill(&WHITE)?;
+    let mut chart = ChartBuilder::on(&root)
+        .margin(20)
+        // .caption("Test Dispersion", ("helvetica", 50*scale_factor))
+        .x_label_area_size(70*scale_factor)
+        .y_label_area_size(100*scale_factor)
+        .build_cartesian_3d(-x_max..x_max, 0.0 .. y_max, - z_max .. z_max)?;
+
+    chart.with_projection(|mut pb| {
+        pb.pitch = 0.2;
+        pb.yaw = 0.5;
+        pb.scale = 0.7;
+        pb.into_matrix()
+    });
+
+    chart
+    // .set_3d_pixel_range((1440,1440,1440))
+    .configure_axes()
+    .label_style(("helvetica", 25*scale_factor))
+    .draw()?;
+
+    println!("{:?}", data.shape());
+
+    for m in 0 .. n_states {
+        chart.draw_series(SurfaceSeries::xoz(
+            x_array.iter().map(|el| *el),
+            z_array.iter().map(|el| *el),
+            |x:f64,z:f64| {
+                let i = ((x + x_max) / x_max / 2.0 * (prm.nk - 1) as f64) as usize;
+                let j = ((z + z_max) / z_max / 2.0 * (prm.nk - 1) as f64) as usize;
+                // println!("i {} j {} m{} data{}", i, j, m, data_c[[i,j,m]]);
+                data[[i,j,m]] - *zpe
+            } ).style_func(
+                &|y: &f64| 
+                {
+                    let _val = *y;
+                    if *y > 2.0{
+                        HSLColor(0.0, 0.0, 0.0).mix(0.0).filled()
+                    }
+                    else {
+                        let col = m as f64 / n_states as f64;
+                        // println!("{}", col);
+                        HSLColor(0.6666, col as f64, 0.666).mix(0.5).filled()
+                    }
+                }
+            )
+        ).unwrap();
     }
 
     // To avoid the IO failure being ignored silently, we manually call the present function

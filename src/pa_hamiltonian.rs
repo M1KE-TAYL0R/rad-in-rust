@@ -29,7 +29,7 @@ fn get_t_pa(prm:&Parameters) -> Array2<c64>{
     let i_m = iden(prm.n_kappa);
     let i_ph = iden(prm.nf);
 
-    let a = get_a(prm.nf);
+    let a = get_a_pa(prm.nf);
     let a_k = c64::from( prm.g_wc * (prm.hbar * prm.m * prm.wc).sqrt() );
     let vec_pot = a_k * (&a + &a.t());
 
@@ -73,7 +73,7 @@ fn get_h_ph(prm:&Parameters) -> Array2<c64>{
 }
 
 /// Calculates the Bogoliubov transformed b operator matrix
-fn get_a(nf:usize) -> Array2<c64>{
+pub fn get_a_pa(nf:usize) -> Array2<c64>{
     let mut a: Array2<c64> = Array2::zeros([nf,nf]);
 
     for m in 0..nf - 1 {

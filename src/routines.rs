@@ -156,7 +156,61 @@ pub fn get_absorption(mut prm: Parameters, args: &Vec<String>) {
     }
 }
 
+pub fn get_disps_2_d(mut prm: Parameters, args:&Vec<String> ) {
 
+    for g_wc in prm.g_wc_grid.clone(){ 
+
+        println!("Coupling = {}", g_wc);
+
+        // Set coupling strength in prm
+        prm.g_wc = g_wc;
+        
+        let data_fname = filename(&prm, "_disp2d.npy");
+        let data_c_fname = filename(&prm, "_c_disp2d.npy");
+        // let graph_fname = filename(&prm, "_disp2d.svg");
+        let graph_fname = filename(&prm, "_disp2d.png");
+
+        let n_states = prm.n_kappa * prm.nf;
+        
+        let k_ph_array = Array1::linspace(-prm.a_0/PI, prm.a_0/PI, prm.nk);
+
+        let mut data_export: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
+        let mut data_export_c: Array3<f64> = Array3::zeros((prm.nk,prm.nk, n_states));
+
+        if !(prm.load_existing && Path::new(&data_fname).exists() && Path::new(&data_c_fname).exists()){
+
+            for k_ph in k_ph_array.iter().progress().enumerate(){
+                println!("Computing {} / {}", k_ph.0, prm.nk);
+
+                let wc_ph = (prm.wc_norm.powi(2) + (k_ph.1).powi(2)).sqrt();
+
+                let mut data: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa + 1));
+                let mut data_color: Array2<f64> = Array2::zeros((prm.nk, prm.nf * prm.n_kappa));
+
+                (data, data_color) = rayon_dispatch(data, data_color, args, &prm.k_points, g_wc, Some(wc_ph));
+
+                data_export.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data.slice(s![..,1..n_states]).to_owned()));
+                data_export_c.slice_mut(s![k_ph.0,..,..n_states-1]).assign(&(data_color.slice(s![..,..n_states-1]).to_owned()));
+            }
+
+            write_npy(data_fname, &data_export).unwrap();
+            write_npy(data_c_fname, &data_export_c).unwrap();
+            
+            println!("test");
+            plotters_disp_2d(&data_export, &data_export_c, 7, &prm, &graph_fname).unwrap();
+
+            println!("test2");
+        }
+        else {
+            println!{"Reading existing data"}
+            data_export = read_npy(data_fname).unwrap();
+            data_export_c = read_npy(data_c_fname).unwrap();
+
+            plotters_disp_2d(&data_export, &data_export_c, 7, &prm, &graph_fname).unwrap();
+        }
+
+    }
+}
 
 
 /// Generates a dispersion plot for each coupling strength in `prm.g_wc_grid`.
