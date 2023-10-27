@@ -117,7 +117,7 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
     // let x_array = Array1::linspace(-x_max, x_max, prm.nk * 2);
     // let z_array = Array1::linspace(-x_max, x_max, prm.nk * 2);
 
-    let scale_factor = 10;
+    let scale_factor = 2;
 
     // let zpe = data.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
 
@@ -125,7 +125,7 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
 
     if gif {
         let fps = 30;
-        let length = 5;
+        let length = 4;
         let area = BitMapBackend::gif(
             "disp/animated.gif", 
             (1080*scale_factor, 1080*scale_factor), 
@@ -144,7 +144,7 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
 
             chart.with_projection(|mut pb| {
                 pb.pitch = 0.2;
-                pb.yaw = (i as f64) / ((fps * length) as f64) * PI / 2.0 ;
+                pb.yaw = (i as f64) / ((fps * length) as f64) * PI ;
                 pb.scale = 0.8;
                 pb.into_matrix()
             });
@@ -155,7 +155,7 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
             .label_style(("helvetica", 25*scale_factor))
             .draw()?;
 
-            draw_s_series(chart, n_states, data, prm, (x_max,y_max,z_max));
+            draw_s_series(chart, n_states, data, data_c, prm, (x_max,y_max,z_max));
 
             area.present().unwrap();
         }
@@ -163,10 +163,9 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
         Ok(())
     }
 
-    else{
+    else {
         // let root = SVGBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
-        let root = BitMapBackend::new(fname, (1080*scale_factor,1080*scale_factor)).into_drawing_area();
-
+        let root = BitMapBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
 
         root.fill(&WHITE)?;
         let mut chart = ChartBuilder::on(&root)
@@ -178,10 +177,16 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
 
         chart.with_projection(|mut pb| {
             pb.pitch = 0.2;
-            pb.yaw = 1.0;
-            pb.scale = 0.8;
+            pb.yaw = 2.2;
+            pb.scale = 0.95;
             pb.into_matrix()
         });
+        // chart.with_projection(|mut pb| {
+        //     pb.pitch = 0.0;
+        //     pb.yaw = PI / 2.0;
+        //     pb.scale = 0.95;
+        //     pb.into_matrix()
+        // });
 
         chart
         // .set_3d_pixel_range((1440,1440,1440))
@@ -189,7 +194,7 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
         .label_style(("helvetica", 25*scale_factor))
         .draw()?;
 
-        draw_s_series(chart, n_states, data, prm, (x_max,y_max,z_max));
+        draw_s_series(chart, n_states, data, data_c, prm, (x_max,y_max,z_max));
 
         root.present().expect("Unable to write result to file, please make sure 'plotters-doc-data' dir exists under current dir");
         println!("Result has been saved to {}", fname);
@@ -198,9 +203,9 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
     }
 }
 
-fn draw_s_series(mut chart:ChartContext<'_, BitMapBackend<'_>, Cartesian3d<RangedCoordf64, RangedCoordf64, RangedCoordf64>>, n_states:usize, data:&Array3<f64>, prm: &Parameters, maxes: (f64,f64,f64)) {
+fn draw_s_series(mut chart:ChartContext<'_, BitMapBackend<'_>, Cartesian3d<RangedCoordf64, RangedCoordf64, RangedCoordf64>>, n_states:usize, data:&Array3<f64>, data_c:&Array3<f64>, prm: &Parameters, maxes: (f64,f64,f64)) {
     let x_max = maxes.0;
-    let z_max = maxes.1;
+    let z_max = maxes.2;
 
     let x_array = Array1::linspace(-x_max, x_max, prm.nk + 1);
     let z_array = Array1::linspace(-x_max, x_max, prm.nk + 1);
@@ -220,18 +225,54 @@ fn draw_s_series(mut chart:ChartContext<'_, BitMapBackend<'_>, Cartesian3d<Range
                 &|y: &f64| 
                 {
                     let _val = *y;
-                    if *y > 2.0{
+                    if *y > maxes.1{
                         HSLColor(0.0, 0.0, 0.0).mix(0.0).filled()
                     }
                     else {
                         let col = m as f64 / n_states as f64;
                         // println!("{}", col);
+                        // HSLColor(0.333, col as f64, 0.7).mix(0.5).filled()
                         HSLColor(0.6666, col as f64, 0.666).mix(0.5).filled()
                     }
                 }
             )
         ).unwrap();
+
+        // chart.draw_series(LineSeries::new(
+        //     (0..prm.nk).map(|ind| (x_array[0],data[[0,ind,m]],x_array[ind])),
+        //     (&BLACK).stroke_width(3)
+        // )).unwrap();
+
+        chart.draw_series( (0..prm.nk).map({ |ind|
+            if (data[[ind,ind,m]] - zpe) < maxes.1 {
+                EmptyElement::at((x_array[ind],data[[ind,ind,m]] - zpe,x_array[ind])) + Circle::new((0,0), 6, VulcanoHSL::get_color_normalized(data_c[[ind,ind,m]] as f32, 0.0, 1.0).filled())
+            }
+            else {
+                EmptyElement::at((0.,0.,0.)) + Circle::new((0,0), 1, &WHITE.mix(0.0))
+            }
+        })).unwrap();
     }
+
+    for m in 0 .. n_states {
+        chart.draw_series( (0..prm.nk).map({ |ind|
+            if (data[[0,ind,m]] - zpe) < maxes.1 {
+                EmptyElement::at((-x_array[0],data[[0,ind,m]] - zpe,x_array[ind])) + Circle::new((0,0), 3, (&BLACK).filled())
+            }
+            else {
+                EmptyElement::at((0.,0.,0.)) + Circle::new((0,0), 1, &WHITE.mix(0.0))
+            }
+        })).unwrap();
+
+        chart.draw_series( (0..prm.nk).map({ |ind|
+            if (data[[ind,0,m]] - zpe) < maxes.1 {
+                EmptyElement::at((x_array[ind],data[[ind,0,m]] - zpe,x_array[0])) + Circle::new((0,0), 3, (&BLACK).filled())
+            }
+            else {
+                EmptyElement::at((0.,0.,0.)) + Circle::new((0,0), 1, &WHITE.mix(0.0))
+            }
+        })).unwrap();
+    }
+
 }
 
 pub fn plot_absorb(histogram:&Array2<f64>,prm: &Parameters, n_bins: usize, fname:&String) {

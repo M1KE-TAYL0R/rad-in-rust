@@ -206,7 +206,7 @@ pub fn get_disps_2_d(mut prm: Parameters, args:&Vec<String> ) {
             data_export = read_npy(data_fname).unwrap();
             data_export_c = read_npy(data_c_fname).unwrap();
 
-            plotters_disp_2d(&data_export, &data_export_c, 7, &prm, &graph_fname).unwrap();
+            plotters_disp_2d(&data_export, &data_export_c, 4, &prm, &graph_fname).unwrap();
         }
 
     }
