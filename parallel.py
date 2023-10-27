@@ -6,8 +6,8 @@ os.system("cargo build --release")
 
 # Simulation parameters
 n_sections = 1
-g_min_log =  -0.60205999132
-# g_min_log =  -15.0
+# g_min_log =  -0.60205999132
+g_min_log =  -15.0
 g_max_log =  -1.0
 log_g_bounds = np.linspace(g_min_log,g_max_log,n_sections+1)
 ng = 1
@@ -23,7 +23,7 @@ print(f"Running rad-in-rust with {ng*n_sections} couplings and {nk} k-points")
 node = "-p preempt"
 # node = "-p action -A action"
 time = "1-00:00:00"
-tasks = "48"
+tasks = "24"
 memory = "2GB"
 
 

@@ -1,7 +1,7 @@
 use std::f64::consts::PI;
 use gnuplot::*;
 use ndarray::{Array2,Array1,s,Array3};
-use plotters::{prelude::*, style::Color};
+use plotters::{prelude::*, style::Color, coord::{types::RangedCoordf64, cartesian::Cartesian3d}};
 use statrs::statistics::Statistics;
 
 use crate::parameters::*;
@@ -37,7 +37,7 @@ pub fn plotters_disp(data:&Array2<f64>,data_c:&Array2<f64>, n_states:usize, prm:
     let y_max = 5.0 as f32;
     let c_max = data_c.max() as f32;
 
-    let scale_factor = 10;
+    let scale_factor = 1;
 
     let zpe = data.column(1).to_vec().into_iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
     let zpe_vec: Array1<f64> = Array1::ones(prm.nk)*zpe;
@@ -114,39 +114,98 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
     let y_max = 2.0;
     let _c_max = data_c.max();
 
-    let x_array = Array1::linspace(-x_max, x_max, prm.nk * 2);
-    let z_array = Array1::linspace(-x_max, x_max, prm.nk * 2);
+    // let x_array = Array1::linspace(-x_max, x_max, prm.nk * 2);
+    // let z_array = Array1::linspace(-x_max, x_max, prm.nk * 2);
 
     let scale_factor = 10;
 
+    // let zpe = data.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+
+    let gif = false;
+
+    if gif {
+        let fps = 30;
+        let length = 5;
+        let area = BitMapBackend::gif(
+            "disp/animated.gif", 
+            (1080*scale_factor, 1080*scale_factor), 
+            1000/fps
+        )?.into_drawing_area();
+            
+        for i in 0..=fps*length {
+            area.fill(&WHITE)?;
+            
+            let mut chart = ChartBuilder::on(&area)
+                .margin(20)
+                // .caption("Test Dispersion", ("helvetica", 50*scale_factor))
+                .x_label_area_size(70*scale_factor)
+                .y_label_area_size(100*scale_factor)
+                .build_cartesian_3d(-x_max..x_max, 0.0 .. y_max, - z_max .. z_max)?;
+
+            chart.with_projection(|mut pb| {
+                pb.pitch = 0.2;
+                pb.yaw = (i as f64) / ((fps * length) as f64) * PI / 2.0 ;
+                pb.scale = 0.8;
+                pb.into_matrix()
+            });
+
+            chart
+            // .set_3d_pixel_range((1440,1440,1440))
+            .configure_axes()
+            .label_style(("helvetica", 25*scale_factor))
+            .draw()?;
+
+            draw_s_series(chart, n_states, data, prm, (x_max,y_max,z_max));
+
+            area.present().unwrap();
+        }
+
+        Ok(())
+    }
+
+    else{
+        // let root = SVGBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
+        let root = BitMapBackend::new(fname, (1080*scale_factor,1080*scale_factor)).into_drawing_area();
+
+
+        root.fill(&WHITE)?;
+        let mut chart = ChartBuilder::on(&root)
+            .margin(20)
+            // .caption("Test Dispersion", ("helvetica", 50*scale_factor))
+            .x_label_area_size(70*scale_factor)
+            .y_label_area_size(100*scale_factor)
+            .build_cartesian_3d(-x_max..x_max, 0.0 .. y_max, - z_max .. z_max)?;
+
+        chart.with_projection(|mut pb| {
+            pb.pitch = 0.2;
+            pb.yaw = 1.0;
+            pb.scale = 0.8;
+            pb.into_matrix()
+        });
+
+        chart
+        // .set_3d_pixel_range((1440,1440,1440))
+        .configure_axes()
+        .label_style(("helvetica", 25*scale_factor))
+        .draw()?;
+
+        draw_s_series(chart, n_states, data, prm, (x_max,y_max,z_max));
+
+        root.present().expect("Unable to write result to file, please make sure 'plotters-doc-data' dir exists under current dir");
+        println!("Result has been saved to {}", fname);
+
+        Ok(())
+    }
+}
+
+fn draw_s_series(mut chart:ChartContext<'_, BitMapBackend<'_>, Cartesian3d<RangedCoordf64, RangedCoordf64, RangedCoordf64>>, n_states:usize, data:&Array3<f64>, prm: &Parameters, maxes: (f64,f64,f64)) {
+    let x_max = maxes.0;
+    let z_max = maxes.1;
+
+    let x_array = Array1::linspace(-x_max, x_max, prm.nk + 1);
+    let z_array = Array1::linspace(-x_max, x_max, prm.nk + 1);
+
     let zpe = data.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
-
-    // let root = SVGBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
-    let root = BitMapBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
-
-
-    root.fill(&WHITE)?;
-    let mut chart = ChartBuilder::on(&root)
-        .margin(20)
-        // .caption("Test Dispersion", ("helvetica", 50*scale_factor))
-        .x_label_area_size(70*scale_factor)
-        .y_label_area_size(100*scale_factor)
-        .build_cartesian_3d(-x_max..x_max, 0.0 .. y_max, - z_max .. z_max)?;
-
-    chart.with_projection(|mut pb| {
-        pb.pitch = 0.2;
-        pb.yaw = 0.5;
-        pb.scale = 0.7;
-        pb.into_matrix()
-    });
-
-    chart
-    // .set_3d_pixel_range((1440,1440,1440))
-    .configure_axes()
-    .label_style(("helvetica", 25*scale_factor))
-    .draw()?;
-
-    println!("{:?}", data.shape());
 
     for m in 0 .. n_states {
         chart.draw_series(SurfaceSeries::xoz(
@@ -173,12 +232,6 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
             )
         ).unwrap();
     }
-
-    // To avoid the IO failure being ignored silently, we manually call the present function
-    root.present().expect("Unable to write result to file, please make sure 'plotters-doc-data' dir exists under current dir");
-    println!("Result has been saved to {}", fname);
-
-    Ok(())
 }
 
 pub fn plot_absorb(histogram:&Array2<f64>,prm: &Parameters, n_bins: usize, fname:&String) {
