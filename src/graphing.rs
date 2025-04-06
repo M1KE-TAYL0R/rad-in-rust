@@ -121,11 +121,20 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
 
     // let zpe = data.iter().min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
 
-    let gif = false;
+    let gif = true;
+    let dark = true;
+
+    let mut background = WHITE;
+    let mut accent = BLACK;
+
+    if dark {
+        background = BLACK;
+        accent = WHITE;
+    }
 
     if gif {
         let fps = 30;
-        let length = 4;
+        let length = 6;
         let area = BitMapBackend::gif(
             "disp/animated.gif", 
             (1080*scale_factor, 1080*scale_factor), 
@@ -133,7 +142,7 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
         )?.into_drawing_area();
             
         for i in 0..=fps*length {
-            area.fill(&WHITE)?;
+            area.fill(&BLACK)?;
             
             let mut chart = ChartBuilder::on(&area)
                 .margin(20)
@@ -152,7 +161,8 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
             chart
             // .set_3d_pixel_range((1440,1440,1440))
             .configure_axes()
-            .label_style(("helvetica", 25*scale_factor))
+            .bold_grid_style(&WHITE)
+            .label_style(("helvetica", 25*scale_factor).into_font().color(&WHITE))
             .draw()?;
 
             draw_s_series(chart, n_states, data, data_c, prm, (x_max,y_max,z_max));
@@ -167,7 +177,7 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
         // let root = SVGBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
         let root = BitMapBackend::new(fname, (1440*scale_factor,1080*scale_factor)).into_drawing_area();
 
-        root.fill(&WHITE)?;
+        root.fill(&background)?;
         let mut chart = ChartBuilder::on(&root)
             .margin(20)
             // .caption("Test Dispersion", ("helvetica", 50*scale_factor))
@@ -191,7 +201,8 @@ pub fn plotters_disp_2d(data:&Array3<f64>,data_c:&Array3<f64>,n_states:usize, pr
         chart
         // .set_3d_pixel_range((1440,1440,1440))
         .configure_axes()
-        .label_style(("helvetica", 25*scale_factor))
+        .bold_grid_style(&accent)
+        .label_style(("helvetica", 25*scale_factor).into_font().color(&accent))
         .draw()?;
 
         draw_s_series(chart, n_states, data, data_c, prm, (x_max,y_max,z_max));
